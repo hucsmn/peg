@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 )
 
 // TODO: make TI, TSI, BackI works on all the UTF-8 strings.
@@ -11,17 +12,16 @@ import (
 // Underlying types implemented Pattern interface.
 type (
 	patternText struct {
-		insensitive bool
+		insensitive bool // assumes couldSafelyFoldCase(text) if true
 		text        string
 	}
 
 	patternBackwardPredicate struct {
-		insensitive bool
-		text        string
+		text string
 	}
 
 	patternTextSet struct {
-		insensitive bool
+		insensitive bool // assumes couldSafelyFoldCase(text) if true
 		sorted      []string
 		tree        prefixTree
 	}
@@ -52,16 +52,47 @@ func T(text string) Pattern {
 }
 
 // TI matches text case insensitively.
-// Panics if case insensitive is not implemented for text,
-// see CouldBeCaseInsensitive.
 func TI(text string) Pattern {
 	if len(text) == 0 {
 		return True
 	}
-	if !CouldBeCaseInsensitive(text) {
-		panic(errorCaseInsensitive(text))
+
+	// split text into pieces that satisfies couldSafelyFoldCase(piece).
+	// build Seq(TI(safe), S("unsafe"))
+	var pats []Pattern
+	var at, span int
+	for at < len(text) {
+		r, n := utf8.DecodeRuneInString(text[at:])
+		if pat, ok := lengthChangedAfterFoldCase[r]; ok {
+			if span > 0 {
+				pats = append(pats, &patternText{
+					insensitive: true,
+					text:        foldCase(text[at-span : at]),
+				})
+			}
+			pats = append(pats, pat)
+			at += n
+			span = 0
+		} else {
+			at += n
+			span += n
+		}
 	}
-	return &patternText{insensitive: true, text: strings.ToLower(text)}
+	if span > 0 {
+		pats = append(pats, &patternText{
+			insensitive: true,
+			text:        foldCase(text[at-span : at]),
+		})
+	}
+
+	switch len(pats) {
+	case 0:
+		return True
+	case 1:
+		return pats[0]
+	default:
+		return Seq(pats...)
+	}
 }
 
 // Back predicates if text matches in backward.
@@ -69,45 +100,55 @@ func Back(text string) Pattern {
 	if len(text) == 0 {
 		return True
 	}
-	return &patternBackwardPredicate{
-		insensitive: false,
-		text:        text,
-	}
-}
-
-// BackI predicates if text matches in backward case insensitively.
-// Panics if case insensitive is not implemented for text,
-// see CouldBeCaseInsensitive.
-func BackI(text string) Pattern {
-	if len(text) == 0 {
-		return True
-	}
-	if !CouldBeCaseInsensitive(text) {
-		panic(errorCaseInsensitive(text))
-	}
-	return &patternBackwardPredicate{
-		insensitive: true,
-		text:        text,
-	}
+	return &patternBackwardPredicate{text}
 }
 
 // TS matches texts in set.
 func TS(textset ...string) Pattern {
 	pat := &patternTextSet{insensitive: false}
-	pat.set(textset)
+	copied := make([]string, len(textset))
+	copy(copied, textset)
+	pat.set(copied)
 	return pat
 }
 
 // TSI matches texts in set case insensitively.
-// Panics if case insensitive is not implemented for text,
-// see CouldBeCaseInsensitive.
 func TSI(textset ...string) Pattern {
-	pat := &patternTextSet{insensitive: true}
-	err := pat.set(textset)
-	if err != nil {
-		panic(err)
+	// Find out strings changed length after foldCase.
+	safe := make([]string, 0, len(textset))
+	unsafe := []string{}
+	for _, s := range textset {
+		if couldSafelyFoldCase(s) {
+			safe = append(safe, s)
+		} else {
+			unsafe = append(unsafe, s)
+		}
 	}
-	return pat
+
+	// build Alt(TI(unsafe[*]), ..., TSI(safe)).
+	var tail Pattern
+	if len(safe) != 0 {
+		pat := &patternTextSet{insensitive: true}
+		pat.set(safe)
+		tail = pat
+	}
+	if len(unsafe) == 0 {
+		if tail == nil {
+			return False
+		}
+		return tail
+	}
+
+	// append in reversed order, to make sure the longer text is prior.
+	sort.Strings(unsafe)
+	pats := make([]Pattern, 0, len(unsafe)+1)
+	for i := len(unsafe) - 1; i >= 0; i-- {
+		pats = append(pats, TI(unsafe[i]))
+	}
+	if tail != nil {
+		pats = append(pats, tail)
+	}
+	return Alt(pats...)
 }
 
 // Ref matches the text in groups.
@@ -124,7 +165,7 @@ func RefBack(grpname string) Pattern {
 func (pat *patternText) match(ctx *context) error {
 	text := ctx.readNext(len(pat.text))
 	if pat.insensitive {
-		text = strings.ToLower(text)
+		text = foldCase(text)
 	}
 
 	if text == pat.text {
@@ -136,11 +177,7 @@ func (pat *patternText) match(ctx *context) error {
 
 // Predicates backward text.
 func (pat *patternBackwardPredicate) match(ctx *context) error {
-	text := ctx.readPrev(len(pat.text))
-	if pat.insensitive {
-		text = strings.ToLower(text)
-	}
-	return ctx.returnsPredication(text == pat.text)
+	return ctx.returnsPredication(ctx.readPrev(len(pat.text)) == pat.text)
 }
 
 // Matches text set.
@@ -165,7 +202,7 @@ func (pat *patternTextSet) match(ctx *context) error {
 
 		s := ctx.readNext(state.n + state.width)[state.n:]
 		if pat.insensitive {
-			s = strings.ToLower(s)
+			s = foldCase(s)
 		}
 		i, ok := state.search(s)
 		if !ok {
@@ -180,18 +217,13 @@ func (pat *patternTextSet) match(ctx *context) error {
 	return ctx.returnsPredication(false)
 }
 
+// assumes that textset is owned by set.
 func (pat *patternTextSet) set(textset []string) error {
-	pat.sorted = make([]string, len(textset))
+	pat.sorted = textset
 	if pat.insensitive {
-		for i := range textset {
-			lower := strings.ToLower(textset[i])
-			if len(textset[i]) != len(lower) {
-				return errorCaseInsensitive(textset[i])
-			}
-			pat.sorted[i] = lower
+		for i := range pat.sorted {
+			pat.sorted[i] = foldCase(pat.sorted[i])
 		}
-	} else {
-		copy(pat.sorted, textset)
 	}
 	sort.Strings(pat.sorted)
 	pat.tree = buildPrefixTree(pat.sorted)
@@ -282,11 +314,7 @@ func (pat *patternText) String() string {
 }
 
 func (pat *patternBackwardPredicate) String() string {
-	pre := ""
-	if pat.insensitive {
-		pre = "I"
-	}
-	return fmt.Sprintf("back? %s%q", pre, pat.text)
+	return fmt.Sprintf("back? %q", pat.text)
 }
 
 func (pat *patternTextSet) String() string {
@@ -298,7 +326,7 @@ func (pat *patternTextSet) String() string {
 			strs[i] = fmt.Sprintf("%q", pat.sorted[i])
 		}
 	}
-	return strings.Join(strs, "|")
+	return fmt.Sprintf("(%s)", strings.Join(strs, "|"))
 }
 
 func (pat *patternTextRefered) String() string {
@@ -313,15 +341,4 @@ func (pat *patternBackwardPredicateRefered) String() string {
 		return "back? %%"
 	}
 	return fmt.Sprintf("back? %%%q%%", pat.grpname)
-}
-
-// CouldBeCaseInsensitive detects if the given string is safe for
-// case insensitive text matching.
-// Considering the implementations of TI, B, TSI, etc assume that
-// len(text) == len(strings.ToLower(text)), but it was not guaranteed by the
-// UTF-8 encoding.
-// In fact, only 24 uncode letters break this rule (including "İȺȾẞΩKÅⱢⱤ").
-// For example, "İ" (2 bytes) => "i" (one byte).
-func CouldBeCaseInsensitive(s string) bool {
-	return len(s) == len(strings.ToLower(s))
 }
