@@ -134,6 +134,11 @@ func J0(item, sep Pattern) Pattern {
 	return Jn(0, item, sep)
 }
 
+// J1 matches one or more items separated by sep.
+func J1(item, sep Pattern) Pattern {
+	return Jn(1, item, sep)
+}
+
 // Jn matches at least n items separated by sep.
 func Jn(n int, item, sep Pattern) Pattern {
 	if n <= 0 {

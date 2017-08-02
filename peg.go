@@ -43,7 +43,7 @@
 //     Q0(pat), Q1(pat), Qn(atleast, pat)
 //     Q01(pat), Q0n(atmost, pat), Qnn(exact, pat), Qmn(from, to, pat)
 // Join helpers are:
-//     J0(item, sep), Jn(atleast, item, sep)
+//     J0(item, sep), J1(item, sep), Jn(atleast, item, sep)
 //     J0n(atmost, item, sep), Jnn(exact, item, sep), Jmn(from, to, item, sep)
 // Supports for groups, references, triggers and injectors:
 //     G(pat), NG(groupname, pat)
