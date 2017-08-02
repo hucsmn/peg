@@ -216,6 +216,9 @@ func (ctx *context) consume(n int) {
 
 // Tell the position of cursor.
 func (ctx *context) tell() Position {
+	if ctx.config.DisableLineColumnCounting {
+		return Position{Offest: ctx.at}
+	}
 	return ctx.pcalc.calculate(ctx.at)
 }
 

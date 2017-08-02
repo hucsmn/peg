@@ -21,7 +21,7 @@ ConfiguredMatch(config, pat, text) (result, err)
 ```
 
 The configuration `Config` of pattern matching determines max recursion/loop
-times and whether grouping or parser capturing is enabled/disabled.
+times and whether some functionality is enabled/disabled.
 The result of `Result` type contains: is matched, count of bytes matched,
 saved groups `Groups` and `NamedGroups` and the parser captures of
 `[]Capture` type.

@@ -17,7 +17,7 @@
 //     Match(pat, text) (result, err)
 //     ConfiguredMatch(config, pat, text) (result, err)
 // The configuration `Config` of pattern matching determines max recursion/loop
-// times and whether grouping or parser capturing is enabled/disabled.
+// times and whether some functionality is enabled/disabled.
 // The result of Result type contains: is matched, count of bytes matched,
 // saved groups Groups and NamedGroups and the parser captures of
 // []Capture type.
@@ -94,10 +94,11 @@ const (
 
 var (
 	defaultConfig = Config{
-		CallstackLimit:   DefaultCallstackLimit,
-		LoopLimit:        DefaultLoopLimit,
-		DisableGrouping:  false,
-		DisableCapturing: false,
+		CallstackLimit:            DefaultCallstackLimit,
+		LoopLimit:                 DefaultLoopLimit,
+		DisableLineColumnCounting: false,
+		DisableGrouping:           false,
+		DisableCapturing:          false,
 	}
 )
 
@@ -114,6 +115,9 @@ type (
 
 		// Maximum loop number for qualifiers, zero or negative for unlimited.
 		LoopLimit int
+
+		// Determines if the position calculation is disabled.
+		DisableLineColumnCounting bool
 
 		// Determines if grouping is disabled.
 		DisableGrouping bool
@@ -169,6 +173,7 @@ type (
 // MatchedPrefix returns the matched prefix of text when successfully matched.
 func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 	config := defaultConfig
+	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
 	r, err := ConfiguredMatch(config, pat, text)
 	if err != nil || !r.Ok {
@@ -184,6 +189,7 @@ func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 // returns false rather than true counter-intuitively.
 func IsFullMatched(pat Pattern, text string) bool {
 	config := defaultConfig
+	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
 	r, err := ConfiguredMatch(config, pat, text)
 	return err == nil && r.Ok && r.N == len(text)
@@ -191,7 +197,7 @@ func IsFullMatched(pat Pattern, text string) bool {
 
 // Match runs pattern matching on given text, using the default configuration.
 // The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
-// while grouping and parse capturing is enabled.
+// while line-column counting, grouping and parse capturing is enabled.
 // Returns nil result if any error occurs.
 func Match(pat Pattern, text string) (result *Result, err error) {
 	return ConfiguredMatch(defaultConfig, pat, text)
@@ -199,7 +205,7 @@ func Match(pat Pattern, text string) (result *Result, err error) {
 
 // ConfiguredMatch runs pattern matching on text, using given configuration.
 // The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
-// while grouping and parse capturing is enabled.
+// while line-column counting, grouping and parse capturing is enabled.
 // Returns nil result if any error occurs.
 func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, err error) {
 	if pat == nil {
