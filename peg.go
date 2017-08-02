@@ -9,6 +9,7 @@
 // http://www.inf.puc-rio.br/~roberto/lpeg/
 //
 // Overlook of methods
+//
 // There are four methods for PEG attern matching, text extracting and
 // parse tree building:
 //     MatchedPrefix(pat, text) (prefix, ok)
@@ -25,6 +26,7 @@
 // parsing process.
 //
 // Overlook of patterns
+//
 // There are several basic patterns, which matches a single rune or a piece of
 // text:
 //     T(text), TI(insensitivetext), TS(text, ...), TSI(insensitivetext, ...)
@@ -54,17 +56,23 @@
 //     CC(nontermcons, pat), CT(termcons, pat)
 //
 // Common mistakes
+//
 // Unreachable branches:
+//
 // Branch of Seq/Alt could be unreachable, considering that Seq searches the
 // first dismatch in the sequence, while Alt searches the first match in the
 // choices. Thus, both Seq(False, unreachable) and Alt(True, unreachable) could
 // just be a mistake. The cases like Alt(T("match"), T("match more")) is common
 // mistakes where the pattern matching more text is not in a prior order.
+//
 // Infinite loops:
+//
 // Any pattern that macthes empty string should not be directly nested inside
 // a qualifier like Q0, Q1, Qn. It may result in an infinite loop. For example,
 // Q1(True) or Q0(Q0(T("not empty"))) would loop until LoopLimit is reached.
+//
 // Left recursion:
+//
 // PEG parsers are top-down, that is, the context-free grammar rules would be
 // expanded immediately, thus a left recursion would never terminate.
 // For example, Let(map[string]Pattern{"var": Seq(T("A"), V("var"))}, V("var"))
