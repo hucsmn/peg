@@ -136,6 +136,11 @@ func Jn(n int, item, sep Pattern) Pattern {
 	return Seq(item, Qn(n-1, Seq(sep, item)))
 }
 
+// J0n matches at most n items separated by sep.
+func J0n(n int, item, sep Pattern) Pattern {
+	return Jmn(0, n, item, sep)
+}
+
 // Jnn matches exactly n items separated by sep.
 func Jnn(n int, item, sep Pattern) Pattern {
 	switch {

@@ -154,8 +154,8 @@ func Ref(grpname string) Pattern {
 	return &patternTextRefered{grpname}
 }
 
-// RefBack predicates if the text in groups matches in backward.
-func RefBack(grpname string) Pattern {
+// RefB predicates if the text in groups matches in backward.
+func RefB(grpname string) Pattern {
 	return &patternBackwardPredicateRefered{grpname}
 }
 

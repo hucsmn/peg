@@ -9,7 +9,7 @@ import (
 
 // Tests for grouping and capturing.
 
-// Tests Cgrp, Cname, Check, Trunc, Inject, Ref, RefBack.
+// Tests Cgrp, Cname, Check, Trunc, Inject, Ref, RefB.
 func TestGroupInjectAndRefer(t *testing.T) {
 	zeroes := func(s string) (int, bool) {
 		var i int
@@ -76,8 +76,8 @@ func TestGroupInjectAndRefer(t *testing.T) {
 		{"+1.e-2 != .1e2", true, 14, false, `"num"="+1.e-2"`, ``, patJudge},
 		{"+1.e-2 != +1.e-2", false, 0, false, `"num"="+1.e-2"`, ``, patJudge},
 
-		{"ABC", false, 0, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefBack(""))},
-		{"ABA", true, 3, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefBack(""))},
+		{"ABC", false, 0, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefB(""))},
+		{"ABA", true, 3, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefB(""))},
 	}
 
 	for _, d := range data {
