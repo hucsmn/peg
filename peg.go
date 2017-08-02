@@ -106,6 +106,7 @@ type (
 	// Pattern is the tree representation for Parse Grammar Expression.
 	Pattern interface {
 		match(ctx *context) error
+		String() string
 	}
 
 	// Config contains configration for pattern matching.
