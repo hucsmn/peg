@@ -239,7 +239,7 @@ func TestSeqAlt(t *testing.T) {
 	}
 }
 
-// Tests Test, Not, SOL, EOL, EOF, Back, BackI
+// Tests Test, Not, SOL, EOL, EOF, B,
 //       And, Or, When, If, Switch
 func TestPredicators(t *testing.T) {
 	data := []patternTestData{
@@ -270,10 +270,10 @@ func TestPredicators(t *testing.T) {
 		{"A", false, 0, false, ``, ``, EOF},
 		{"A", true, 1, false, ``, ``, Seq(Dot, EOF)},
 
-		{"A", true, 1, false, ``, ``, Seq(Dot, Back("A"))},
-		{"A", false, 0, false, ``, ``, Seq(Dot, Back("B"))},
-		{"A", false, 0, false, ``, ``, Seq(Dot, Back("AB"))},
-		{"A", false, 0, false, ``, ``, Seq(Dot, Back("BA"))},
+		{"A", true, 1, false, ``, ``, Seq(Dot, B("A"))},
+		{"A", false, 0, false, ``, ``, Seq(Dot, B("B"))},
+		{"A", false, 0, false, ``, ``, Seq(Dot, B("AB"))},
+		{"A", false, 0, false, ``, ``, Seq(Dot, B("BA"))},
 
 		{"", true, 0, false, ``, ``, And(True, True)},
 		{"", false, 0, false, ``, ``, And(True, False)},
@@ -294,7 +294,7 @@ func TestPredicators(t *testing.T) {
 		{"CA", false, 0, false, ``, ``, Or(T("A"), T("B"))},
 		{"AB", true, 0, false, ``, ``, Or(T("AB"), T("ABC"))},
 
-		{"ABC", true, 2, false, ``, ``, Seq(Dot, When(Back("A"), T("B")))},
+		{"ABC", true, 2, false, ``, ``, Seq(Dot, When(B("A"), T("B")))},
 		{"AB", true, 2, false, ``, ``, When(Not(T("0")), Seq(U("-White_Space"), U("-White_Space")))},
 		{"0A", false, 0, false, ``, ``, When(Not(T("0")), Seq(U("-White_Space"), U("-White_Space")))},
 		{"A0", true, 2, false, ``, ``, When(Not(T("0")), Seq(U("-White_Space"), U("-White_Space")))},
@@ -304,12 +304,12 @@ func TestPredicators(t *testing.T) {
 		{"0nan", false, 0, false, ``, ``, If(R('0', '9'), Seq(Dot, T("num")), Seq(Dot, T("nan")))},
 		{"anum", false, 0, false, ``, ``, If(R('0', '9'), Seq(Dot, T("num")), Seq(Dot, T("nan")))},
 		{"anan", true, 4, false, ``, ``, If(R('0', '9'), Seq(Dot, T("num")), Seq(Dot, T("nan")))},
-		{"0a", true, 2, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
-		{"0b", false, 0, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
-		{"1a", false, 0, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
-		{"1b", true, 2, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
-		{"2c", true, 2, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
-		{"2a", false, 0, false, ``, ``, Seq(Dot, Switch(Back("0"), T("a"), Back("1"), T("b"), T("c")))},
+		{"0a", true, 2, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+		{"0b", false, 0, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+		{"1a", false, 0, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+		{"1b", true, 2, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+		{"2c", true, 2, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+		{"2a", false, 0, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
 	}
 
 	for _, d := range data {

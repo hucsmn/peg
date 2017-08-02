@@ -1,5 +1,5 @@
 // Package peg implements the Parsing Expression Grammars inspired by LPeg.
-package peg
+package peg // import "github.com/hucsmn/peg"
 
 import (
 	"fmt"

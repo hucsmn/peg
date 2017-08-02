@@ -7,8 +7,6 @@ import (
 	"unicode/utf8"
 )
 
-// TODO: make TI, TSI, BackI works on all the UTF-8 strings.
-
 // Underlying types implemented Pattern interface.
 type (
 	patternText struct {
@@ -95,8 +93,8 @@ func TI(text string) Pattern {
 	}
 }
 
-// Back predicates if text matches in backward.
-func Back(text string) Pattern {
+// B predicates if text matches in backward.
+func B(text string) Pattern {
 	if len(text) == 0 {
 		return True
 	}
