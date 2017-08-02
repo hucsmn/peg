@@ -46,7 +46,10 @@ var (
 		Decimal,
 		peg.Q01(
 			peg.Seq(peg.TI("e"), peg.Q01(peg.S("+-")), DecInteger)))
-	Number = peg.Alt(Float, Integer)
+	Number = peg.Alt(
+		peg.Seq(peg.TI("0x"), HexInteger),
+		Float,
+		peg.Seq(peg.T("0"), OctInteger))
 
 	// Identifer.
 	Identifier = peg.Seq(
@@ -67,7 +70,7 @@ var (
 			peg.Seq(peg.T(`\x`), peg.Qnn(2, HexDigit)),
 			peg.Seq(peg.T(`\`), peg.Qnn(3, OctDigit)),
 			peg.Seq(peg.T(`\`), peg.S(`abfnrtv\'"`)),
-			peg.NS(`"\n\r`))),
+			peg.NS("\"\n\r"))),
 		peg.T(`"`))
 )
 
@@ -150,8 +153,8 @@ func newBareIntegerInjector(m, n uint64, base int) func(s string) (int, bool) {
 			s = s[:dn]
 		}
 		for len(s) >= dm {
-			x, _ := strconv.ParseUint(s, base, 64)
-			if x >= m && x <= n {
+			x, err := strconv.ParseUint(s, base, 64)
+			if err == nil && x >= m && x <= n {
 				return zeroes + len(s), true
 			}
 			s = s[:len(s)-1]
