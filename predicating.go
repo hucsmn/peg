@@ -6,19 +6,19 @@ import (
 )
 
 var (
-	// True always matches, consuming no text.
+	// True always matches, but consumes no text.
 	True Pattern = &patternBoolean{true}
 
 	// False always dismatch.
 	False Pattern = &patternBoolean{false}
 
-	// SOL is start of line predicator.
+	// SOL predicates start of line.
 	SOL Pattern = &patternLineAnchorPredicate{true}
 
-	// EOL is end of line predicator.
+	// EOL predicates end of line.
 	EOL Pattern = &patternLineAnchorPredicate{false}
 
-	// EOF is end of file predicator.
+	// EOF predicates end of file.
 	EOF Pattern = patternEOFPredicate{}
 )
 
@@ -72,8 +72,8 @@ func Not(pat Pattern) Pattern {
 	return &patternPredicate{not: true, pat: pat}
 }
 
-// And predicates the patterns in order. If any pattern is dismatched
-// at current position, then it dismatched, consuming no text.
+// And searches the patterns in order to predicate if all the pattern
+// is matched at current position. It consumes no text.
 func And(pats ...Pattern) Pattern {
 	if len(pats) == 0 {
 		return True
@@ -81,8 +81,8 @@ func And(pats ...Pattern) Pattern {
 	return &patternAndPredicate{pats}
 }
 
-// Or predicates the patterns in order. If any pattern is matched
-// at current position, then it matched, consuming no text.
+// Or searches the patterns in order to predicate if any the pattern
+// is matched at current position. It consumes no text.
 func Or(pats ...Pattern) Pattern {
 	if len(pats) == 0 {
 		return False
@@ -90,19 +90,21 @@ func Or(pats ...Pattern) Pattern {
 	return &patternOrPredicate{pats}
 }
 
-// When is equivalent to If(cond, then, False).
+// When tests the given condition but consumes no text, then determines to
+// execute then-branch or just predicates false.
 func When(cond, then Pattern) Pattern {
 	return &patternIf{cond: cond, yes: then, no: False}
 }
 
-// If predicates the given condition, executes yes-brach
-// if true, or execute no-branch if not.
+// If tests the given condition but consumes no text, then determines to
+// execute yes-branch or no-branch.
 func If(cond, yes, no Pattern) Pattern {
 	return &patternIf{cond: cond, yes: yes, no: no}
 }
 
 // Switch tests cond-then pairs in order, executes then-branch if cond is true.
-// If no cond is true, executes the optional otherwise-branch, or returns false.
+// If there is no true cond, executes the optional otherwise-branch,
+// or just predicates false if there is no otherwise-branch.
 func Switch(cond, then Pattern, rest ...Pattern) Pattern {
 	pat := &patternSwitch{}
 	pat.cases = append(pat.cases, struct {

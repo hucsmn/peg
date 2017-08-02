@@ -30,8 +30,9 @@ type (
 	}
 )
 
-// Seq matches patterns in order, it dismatches only if
-// any pattern in the sequence dismatches.
+// Seq tries to match patterns in given sequence, the Seq itself only matched
+// when all of the patterns is successfully matched, the text is consumed in
+// order. It dismatches if any dismatched pattern is encountered.
 func Seq(sequence ...Pattern) Pattern {
 	if len(sequence) == 0 {
 		return &patternBoolean{true}
@@ -39,8 +40,15 @@ func Seq(sequence ...Pattern) Pattern {
 	return &patternSequence{sequence}
 }
 
-// Alt searches the first match in order, it matches only if
-// any pattern in choices matches.
+// Alt searches the first matched pattern in the given choices, theAlt itself
+// only matches when any pattern is successfully matched, the then Alt consumes
+// the searched pattern's number of bytes matched. It dismatches if all the
+// choices is dismatched.
+//
+// It is recommended to place pattern that match more text in a prior order.
+// For example, Alt(Seq(Q1(R('0', '9')), T("."), Q1(R('0', '9'))),
+// Q1(R('0', '9'))) could match both "0.0" and "0", while Alt(Q1(R('0', '9')),
+// Seq(Q1(R('0', '9')), T("."), Q1(R('0', '9')))) could only match "0".
 func Alt(choices ...Pattern) Pattern {
 	if len(choices) == 0 {
 		return &patternBoolean{false}
@@ -48,17 +56,17 @@ func Alt(choices ...Pattern) Pattern {
 	return &patternAlternative{choices}
 }
 
-// Q0 matches pattern repeated any times.
+// Q0 matches the given pattern repeated zero or more times.
 func Q0(pat Pattern) Pattern {
 	return &patternQualifierAtLeast{n: 0, pat: pat}
 }
 
-// Q1 matches pattern repeated at least one time.
+// Q1 matches the given pattern repeated at least one time.
 func Q1(pat Pattern) Pattern {
 	return &patternQualifierAtLeast{n: 1, pat: pat}
 }
 
-// Qn matches pattern repeated at least n times.
+// Qn matches the given pattern repeated at least n times.
 func Qn(least int, pat Pattern) Pattern {
 	if least < 0 {
 		return False
@@ -66,12 +74,12 @@ func Qn(least int, pat Pattern) Pattern {
 	return &patternQualifierAtLeast{n: least, pat: pat}
 }
 
-// Q01 matches pattern optionally.
+// Q01 matches the given pattern optionally.
 func Q01(pat Pattern) Pattern {
 	return &patternQualifierOptional{pat}
 }
 
-// Q0n matches pattern at most n times.
+// Q0n matches the given pattern repeated at most n times.
 func Q0n(n int, pat Pattern) Pattern {
 	if n < 0 {
 		return False
@@ -85,7 +93,7 @@ func Q0n(n int, pat Pattern) Pattern {
 	return &patternQualifierRange{m: 0, n: n, pat: pat}
 }
 
-// Qnn matches pattern exactly n times.
+// Qnn matches the given pattern repeated exactly n times.
 func Qnn(n int, pat Pattern) Pattern {
 	if n < 0 {
 		return False
@@ -99,7 +107,7 @@ func Qnn(n int, pat Pattern) Pattern {
 	return &patternQualifierRange{m: n, n: n, pat: pat}
 }
 
-// Qmn matches pattern repeated from m to n times.
+// Qmn matches the given pattern repeated from m to n times.
 func Qmn(m, n int, pat Pattern) Pattern {
 	if m > n {
 		m, n = n, m
@@ -121,7 +129,7 @@ func Qmn(m, n int, pat Pattern) Pattern {
 	}
 }
 
-// J0 matches at least zero items separated by sep.
+// J0 matches zero or more items separated by sep.
 func J0(item, sep Pattern) Pattern {
 	return Jn(0, item, sep)
 }

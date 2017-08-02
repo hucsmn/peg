@@ -6,7 +6,8 @@ import (
 	"unicode/utf8"
 )
 
-// Position is offset and line-column numbers counting from zero.
+// Position is a record of byte offset and line-column numbers
+// counting from zero.
 type Position struct {
 	Offest int
 	Line   int

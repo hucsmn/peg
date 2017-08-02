@@ -45,22 +45,21 @@ type (
 	}
 )
 
-// S matches a rune existing in given rune set.
+// S matches a rune existed in given rune set.
 func S(set string) Pattern {
 	pat := &patternRuneSet{not: false}
 	pat.set(set)
 	return pat
 }
 
-// NS matches a rune not existing in given rune set.
+// NS matches a rune not existed in given rune set.
 func NS(exclude string) Pattern {
 	pat := &patternRuneSet{not: true}
 	pat.set(exclude)
 	return pat
 }
 
-// R matches a rune existing in given range [low, high].
-// The rest arguments must be rune pairs.
+// R matches a rune in any given range pairs [low, high].
 func R(low, high rune, rest ...rune) Pattern {
 	pat := &patternRuneRange{
 		not:    false,
@@ -75,8 +74,7 @@ func R(low, high rune, rest ...rune) Pattern {
 	return pat
 }
 
-// NR matches a rune out of given range [low, high].
-// The rest arguments must be rune pairs.
+// NR matches a rune out of all given range pairs [low, high].
 func NR(low, high rune, rest ...rune) Pattern {
 	pat := &patternRuneRange{
 		not:    true,
@@ -92,9 +90,11 @@ func NR(low, high rune, rest ...rune) Pattern {
 }
 
 // U matches a rune in the given unicode ranges (see IsUnicodeRangeName).
-// Range name with an optional prefix "-" indicates excluding this range.
+// Range name started with an optional prefix "-" indicates excluding.
+//
 // It would dismatch any rune when given no arguments.
-// Panic if any range name is undefined.
+//
+// Panics if any range name is undefined.
 func U(ranges ...string) Pattern {
 	// preprocessing names
 	iset := make(map[string]bool)

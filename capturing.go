@@ -34,9 +34,9 @@ type (
 	}
 )
 
-// Let binds variable dfinitions to a flatten namescope,
-// then invokes the entry pattern.
-// Panics if any variable is nil.
+// Let enters given namespace then invokes the entry pattern.
+//
+// Panics if any variable definition is nil.
 func Let(vars map[string]Pattern, entry Pattern) Pattern {
 	for name, pat := range vars {
 		if pat == nil {
@@ -47,6 +47,8 @@ func Let(vars map[string]Pattern, entry Pattern) Pattern {
 }
 
 // V invokes a defined variable without capturing.
+//
+// A runtime error occurs when variable is undefined.
 func V(varname string) Pattern {
 	return &patternCaptureVariable{
 		varname: varname,
@@ -54,7 +56,10 @@ func V(varname string) Pattern {
 	}
 }
 
-// CV invokes a defined variable with capturing enabled.
+// CV invokes and captures a defined variable, the parse capture would be
+// stored into a Variable-typed non-terminal when the pattern is matched.
+//
+// A runtime error occurs when variable is undefined.
 func CV(varname string) Pattern {
 	return &patternCaptureVariable{
 		varname: varname,
@@ -62,7 +67,7 @@ func CV(varname string) Pattern {
 	}
 }
 
-// CK constructs Token-typed terminals from matched text.
+// CK constructs a Token-typed terminal from the matched text.
 func CK(toktype int, pat Pattern) Pattern {
 	return &patternCaptureToken{
 		pat:     pat,
@@ -71,12 +76,12 @@ func CK(toktype int, pat Pattern) Pattern {
 	}
 }
 
-// CC constructs non-terminal using user defined constructor.
+// CC constructs a customed non-terminal using user defined constructor.
 func CC(cons NonTerminalConstructor, pat Pattern) Pattern {
 	return &patternCaptureCons{pat: pat, cons: cons}
 }
 
-// CT constructs terminal using user defined constructor.
+// CT constructs a customed terminal using user defined constructor.
 func CT(cons TerminalConstructor, pat Pattern) Pattern {
 	return &patternCaptureTerm{pat: pat, cons: cons}
 }

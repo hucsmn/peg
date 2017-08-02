@@ -21,17 +21,17 @@ type (
 	}
 )
 
-// G groups the matched text.
+// G saves the the matched text to an anonymous group.
 func G(pat Pattern) Pattern {
 	return &patternGrouping{pat: pat, grpname: ""}
 }
 
-// NG groups the matched text, naming it grpname.
+// NG saves the the matched text to a group named grpname.
 func NG(grpname string, pat Pattern) Pattern {
 	return &patternGrouping{pat: pat, grpname: grpname}
 }
 
-// Trigger transfers the matched text to user defined hook.
+// Trigger invokes user defined hook with the text matched.
 func Trigger(hook func(string, Position) error, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -39,7 +39,7 @@ func Trigger(hook func(string, Position) error, pat Pattern) Pattern {
 		trigger: hook}
 }
 
-// Save stores the matched text into given pointer.
+// Save stores the text matched to given pointer.
 func Save(dst *string, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -55,7 +55,7 @@ func newSaveHook(dst *string) func(string, Position) error {
 	}
 }
 
-// Send sends the matched text to given channel.
+// Send sends the text matched to given channel.
 func Send(dst chan<- string, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -71,7 +71,8 @@ func newSendHook(dst chan<- string) func(string, Position) error {
 	}
 }
 
-// SendToken sends the matched token to given channel.
+// SendToken wraps the text matched as a token, then sends it to the given
+// channel.
 func SendToken(dst chan<- Token, toktype int, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -91,8 +92,9 @@ func newSendTokenHook(dst chan<- Token, toktype int) func(string, Position) erro
 	}
 }
 
-// Inject attaches a injector to given pattern which checks the matched text
-// after pattern is matched and determines how many bytes to consume.
+// Inject attaches an injector to given pattern which checks the matched text
+// after matched, then determines whether anything should be matched and
+// how many bytes to consume.
 func Inject(fn func(string) (int, bool), pat Pattern) Pattern {
 	if fn == nil {
 		return pat
@@ -105,8 +107,9 @@ func Inject(fn func(string) (int, bool), pat Pattern) Pattern {
 }
 
 // Check attaches a validator to given pattern which checks the matched text
-// after pattern is matched.
-// Note that, Check(fn, pat) is not a predicator.
+// after matched, then determines whether anything should be matched.
+//
+// Note that, Check(fn, pat) is not a predicator, it may consume text.
 func Check(fn func(string) bool, pat Pattern) Pattern {
 	if fn == nil {
 		return pat
@@ -127,9 +130,8 @@ func newCheckInjector(fn func(string) bool) func(string) (int, bool) {
 	}
 }
 
-// Trunc attaches a truncator to given pattern which truncates
-// the matched text to at most maxrune runes.
-// Note that, Check(fn, pat) is not a predicator.
+// Trunc detects the matched text's length to keep the matched rune count
+// is no more than maxrune.
 func Trunc(maxrune int, pat Pattern) Pattern {
 	return &patternInjector{
 		pat:    pat,

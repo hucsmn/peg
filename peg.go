@@ -102,66 +102,71 @@ var (
 )
 
 type (
-	// Pattern is tree of Parse Grammar Expression.
+	// Pattern is the tree representation for Parse Grammar Expression.
 	Pattern interface {
 		match(ctx *context) error
 	}
 
-	// Config is configration for pattern matching.
+	// Config contains configration for pattern matching.
 	Config struct {
-		// Maximum nesting number, <= 0 for unlimited.
+		// Maximum callstack size, zero or negative for unlimited.
 		CallstackLimit int
 
-		// Maximum looping number, <= 0 for unlimited.
+		// Maximum loop number for qualifiers, zero or negative for unlimited.
 		LoopLimit int
 
-		// Disable grouping.
+		// Determines if grouping is disabled.
 		DisableGrouping bool
 
-		// Disable capturing.
+		// Determines if parse tree capturing is disabled.
 		DisableCapturing bool
 	}
 
-	// Result is the match result.
+	// Result stores the results from pattern matching.
 	Result struct {
-		Ok bool // Whether the whole pattern is matched.
-		N  int  // N bytes matched.
+		// Is pattern matched and how many bytes matched.
+		Ok bool
+		N  int
 
-		// Groups
+		// Grouped text pieces with optional names.
 		Groups      []string
 		NamedGroups map[string]string
 
-		// Captures
+		// Parse captures.
 		Captures []Capture
 	}
 
-	// Capture is PEG capturing tree.
+	// Capture stores structures from parse capturing.
+	// User defined structures (the types implemented Capture interface other
+	// than the predefined Variable type and Token type) are constructed by
+	// customed TerminalConstructor or NonTerminalConstructor.
 	Capture interface {
-		// IsTerminal tells if it was a terminal.
+		// IsTerminal tells if it is a terminal type.
 		IsTerminal() bool
 	}
 
-	// Variable is a non-terminal type, capturing a PEG variable.
+	// Variable is a predefined non-terminal type for PEG variable capturing.
 	Variable struct {
 		Name string
 		Subs []Capture
 	}
 
-	// Token is a terminal type.
+	// Token is a predefined terminal type stores a piece of typed text
+	// and its position in the source text.
 	Token struct {
 		Type     int
 		Value    string
 		Position Position
 	}
 
-	// TerminalConstructor is customed terminal constructor.
+	// TerminalConstructor is customed terminal type constructor.
 	TerminalConstructor func(string, Position) (Capture, error)
 
-	// NonTerminalConstructor is customed non-terminal constructor.
+	// NonTerminalConstructor is customed non-terminal type constructor.
 	NonTerminalConstructor func([]Capture) (Capture, error)
 )
 
-// MatchedPrefix returns the matched prefix of text.
+// MatchedPrefix returns the matched prefix of text when successfully matched.
 func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 	config := defaultConfig
 	config.DisableCapturing = true
@@ -172,7 +177,11 @@ func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 	return text[:r.N], true
 }
 
-// IsFullMatched tests if pattern matches full text.
+// IsFullMatched tells if given pattern matches the full text.
+// It is recommended to use Seq(Alt(...), EOF) rather than use Alt(...) when
+// testing IsFullMatched.
+// For example, IsFullMatched(Alt(T("match"), T("match more")), "match more")
+// returns false rather than true counter-intuitively.
 func IsFullMatched(pat Pattern, text string) bool {
 	config := defaultConfig
 	config.DisableCapturing = true
@@ -180,13 +189,18 @@ func IsFullMatched(pat Pattern, text string) bool {
 	return err == nil && r.Ok && r.N == len(text)
 }
 
-// Match matches pattern against text, then returns the result of matching.
+// Match runs pattern matching on given text, using the default configuration.
+// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
+// while grouping and parse capturing is enabled.
+// Returns nil result if any error occurs.
 func Match(pat Pattern, text string) (result *Result, err error) {
 	return ConfiguredMatch(defaultConfig, pat, text)
 }
 
-// ConfiguredMatch matches pattern against text with given configuration,
-// then returns the result of matching.
+// ConfiguredMatch runs pattern matching on text, using given configuration.
+// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
+// while grouping and parse capturing is enabled.
+// Returns nil result if any error occurs.
 func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, err error) {
 	if pat == nil {
 		return nil, errorNilMainPattern

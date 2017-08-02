@@ -41,7 +41,7 @@ type (
 	}
 )
 
-// T matches text literally.
+// T matches given text literally.
 func T(text string) Pattern {
 	if len(text) == 0 {
 		return True
@@ -49,7 +49,7 @@ func T(text string) Pattern {
 	return &patternText{insensitive: false, text: text}
 }
 
-// TI matches text case insensitively.
+// TI matches given text case-insensitively.
 func TI(text string) Pattern {
 	if len(text) == 0 {
 		return True
@@ -93,7 +93,7 @@ func TI(text string) Pattern {
 	}
 }
 
-// B predicates if text matches in backward.
+// B predicates if given text is matched in backward.
 func B(text string) Pattern {
 	if len(text) == 0 {
 		return True
@@ -101,7 +101,7 @@ func B(text string) Pattern {
 	return &patternBackwardPredicate{text}
 }
 
-// TS matches texts in set.
+// TS matches any text existed in given set.
 func TS(textset ...string) Pattern {
 	pat := &patternTextSet{insensitive: false}
 	copied := make([]string, len(textset))
@@ -110,7 +110,7 @@ func TS(textset ...string) Pattern {
 	return pat
 }
 
-// TSI matches texts in set case insensitively.
+// TSI matches any text existed in given set case-insensitively.
 func TSI(textset ...string) Pattern {
 	// Find out strings changed length after foldCase.
 	safe := make([]string, 0, len(textset))
@@ -149,12 +149,20 @@ func TSI(textset ...string) Pattern {
 	return Alt(pats...)
 }
 
-// Ref matches the text in groups.
+// Ref matches the text in the group named grpname.
+//
+// Use the lastest anonymous group if grpname == "".
+//
+// Use "" if the name grpname does not exist.
 func Ref(grpname string) Pattern {
 	return &patternTextRefered{grpname}
 }
 
-// RefB predicates if the text in groups matches in backward.
+// RefB predicates if the text in the group named grpname matches in backward.
+//
+// Use the lastest anonymous group if grpname == "".
+//
+// Use "" if the name grpname does not exist.
 func RefB(grpname string) Pattern {
 	return &patternBackwardPredicateRefered{grpname}
 }
