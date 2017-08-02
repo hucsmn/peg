@@ -35,26 +35,26 @@ var (
 		// (e.g. ::192.168.0.1).
 		peg.Inject(ipv6EllipsisIPv4,
 			peg.Seq(
-				peg.Jmn(0, 5, HexUint16, peg.T(":")),
+				peg.Jmn(0, 5, SimpleHexUint16, peg.T(":")),
 				peg.T("::"),
 				peg.Alt(
 					peg.Seq(
-						peg.Jmn(1, 5, HexUint16, peg.T(":")),
+						peg.Jmn(1, 5, SimpleHexUint16, peg.T(":")),
 						peg.Seq(peg.T(":"), IPv4)),
 					IPv4))),
 		// ellipsis without trailing 32-bit dot-decimals
 		// (e.g. ::1, ::, ffff::, ffff::1).
 		peg.Inject(ipv6EllipsisNoIPv4,
 			peg.Seq(
-				peg.Jmn(0, 7, HexUint16, peg.T(":")),
+				peg.Jmn(0, 7, SimpleHexUint16, peg.T(":")),
 				peg.T("::"),
-				peg.Jmn(0, 7, HexUint16, peg.T(":")))),
+				peg.Jmn(0, 7, SimpleHexUint16, peg.T(":")))),
 		// 8 uint16 groups (e.g. ffff:0:0:0:0:0:0:0).
 		peg.Jnn(8, HexUint16, peg.T(":")),
 		// 6 uint16 groups with trailing 32-bit dot-decimals
 		// (e.g. ffff:0:0:0:0:0:192.168.0.1).
 		peg.Seq(
-			peg.Jnn(6, HexUint16, peg.T(":")),
+			peg.Jnn(6, SimpleHexUint16, peg.T(":")),
 			peg.Seq(peg.T(":"), IPv4)))
 
 	// IPv6 address with zone identifer.

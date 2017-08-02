@@ -27,6 +27,12 @@ var (
 	OctUint32  = OctIntegerBetween(0, math.MaxUint32)
 	OctUint64  = OctIntegerBetween(0, math.MaxUint64)
 
+	// Simplified bare integer.
+	SimpleHexUint8  = peg.Qmn(1, 2, HexDigit)
+	SimpleHexUint16 = peg.Qmn(1, 4, HexDigit)
+	SimpleHexUint32 = peg.Qmn(1, 8, HexDigit)
+	SimpleHexUint64 = peg.Qmn(1, 16, HexDigit)
+
 	// Numbers.
 	Integer = peg.Alt(
 		peg.Seq(peg.TI("0x"), HexInteger),
@@ -67,14 +73,7 @@ var (
 
 // IntegerBetween matches an Integer in the range [m, n].
 func IntegerBetween(m, n uint64) peg.Pattern {
-	return peg.Check(func(s string) bool {
-		x, err := parseInteger(s)
-		if err != nil {
-			return false
-		}
-
-		return x >= m && x <= n
-	}, Integer)
+	return peg.Inject(newIntegerInjector(m, n), Integer)
 }
 
 // NoRedundantZeroes matches "0" or a bare integer without leading zeroes.
@@ -84,82 +83,89 @@ func NoRedundantZeroes(bareinteger peg.Pattern) peg.Pattern {
 
 // DecIntegerBetween mathces a DecInteger in the range [m, n].
 func DecIntegerBetween(m, n uint64) peg.Pattern {
-	num, max := countBareIntegerDigits(n, 10)
-	if m == 0 && max {
-		return peg.Qmn(1, num, DecInteger)
-	}
-	return peg.Check(newBareIntegerChecker(m, n, 10),
-		peg.Qmn(1, num, DecInteger))
+	return peg.Inject(newBareIntegerInjector(m, n, 10), DecInteger)
 }
 
 // HexIntegerBetween mathces a HexInteger in the range [m, n].
 func HexIntegerBetween(m, n uint64) peg.Pattern {
-	num, max := countBareIntegerDigits(n, 16)
-	if m == 0 && max {
-		return peg.Qmn(1, num, HexInteger)
-	}
-	return peg.Check(newBareIntegerChecker(m, n, 16),
-		peg.Qmn(1, num, HexInteger))
+	return peg.Inject(newBareIntegerInjector(m, n, 16), HexInteger)
 }
 
 // OctIntegerBetween mathces a OctInteger in the range [m, n].
 func OctIntegerBetween(m, n uint64) peg.Pattern {
-	num, max := countBareIntegerDigits(n, 8)
-	if m == 0 && max {
-		return peg.Qmn(1, num, OctInteger)
-	}
-	return peg.Check(newBareIntegerChecker(m, n, 8),
-		peg.Qmn(1, num, OctInteger))
+	return peg.Inject(newBareIntegerInjector(m, n, 8), OctInteger)
 }
 
 // helpers
 
-func newBareIntegerChecker(m, n uint64, base int) func(s string) bool {
-	return func(s string) bool {
-		x, err := strconv.ParseUint(s, base, 64)
-		if err != nil {
-			return false
+func newIntegerInjector(m, n uint64) func(s string) (int, bool) {
+	// assumes: len(s) > 0, matches Integer.
+	return func(s string) (int, bool) {
+		if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+			n, ok := newBareIntegerInjector(m, n, 16)(s[2:])
+			if !ok {
+				return 0, false
+			}
+			return n + 2, true
 		}
-
-		return x >= m && x <= n
+		if s[0] == '0' {
+			oct := true
+			for _, r := range s {
+				if !strings.ContainsRune("01234567", r) {
+					oct = false
+					break
+				}
+			}
+			if oct {
+				return newBareIntegerInjector(m, n, 8)(s)
+			}
+		}
+		return newBareIntegerInjector(m, n, 10)(s)
 	}
 }
 
-func countBareIntegerDigits(x uint64, base int) (n int, max bool) {
+func newBareIntegerInjector(m, n uint64, base int) func(s string) (int, bool) {
+	if m > n {
+		m, n = n, m
+	}
+	dm := countDigits(m, base)
+	dn := countDigits(n, base)
+
+	// assumes: len(s) > 0, 2<=base<=36, all digits are [0-9a-zA-Z].
+	return func(s string) (int, bool) {
+		var zeroes int
+		var r rune
+		for zeroes, r = range s {
+			if r != '0' {
+				break
+			}
+		}
+		if s[zeroes:] == "" {
+			s = s[zeroes-1:]
+		} else {
+			s = s[zeroes:]
+		}
+
+		if len(s) > dn {
+			s = s[:dn]
+		}
+		for len(s) >= dm {
+			x, _ := strconv.ParseUint(s, base, 64)
+			if x >= m && x <= n {
+				return zeroes + len(s), true
+			}
+			s = s[:len(s)-1]
+		}
+		return 0, false
+	}
+}
+
+func countDigits(x uint64, base int) (n int) {
 	b := uint64(base)
 	n = 1
-	max = true
 	for x >= b {
-		if x%b != b-1 {
-			max = false
-		}
 		x /= b
 		n++
 	}
-	if x != b-1 {
-		max = false
-	}
 	return
-}
-
-func parseInteger(s string) (x uint64, err error) {
-	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
-		x, err = strconv.ParseUint(s[2:], 16, 64)
-		if err != nil {
-			return 0, err
-		}
-		return x, nil
-	}
-	if strings.HasPrefix(s, "0") {
-		x, err = strconv.ParseUint(s[1:], 8, 64)
-		if err == nil {
-			return x, nil
-		}
-	}
-
-	x, err = strconv.ParseUint(s, 10, 64)
-	if err == nil {
-		return x, nil
-	}
-	return 0, err
 }
