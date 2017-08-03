@@ -219,12 +219,21 @@ func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, e
 		return nil, err
 	}
 
+	if ctx.ret.ok {
+		return &Result{
+			Ok:          true,
+			N:           ctx.ret.n,
+			Groups:      ctx.groups,
+			NamedGroups: ctx.namedGroups,
+			Captures:    ctx.capstack[0].args,
+		}, nil
+	}
 	return &Result{
-		Ok:          ctx.ret.ok,
-		N:           ctx.ret.n,
-		Groups:      ctx.groups,
-		NamedGroups: ctx.namedGroups,
-		Captures:    ctx.capstack[0].args,
+		Ok:          false,
+		N:           0,
+		Groups:      nil,
+		NamedGroups: nil,
+		Captures:    nil,
 	}, nil
 }
 

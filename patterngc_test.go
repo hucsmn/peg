@@ -49,6 +49,8 @@ func TestGroupInjectAndRefer(t *testing.T) {
 	data := []patternTestData{
 		{"", true, 0, false, `""`, ``, G(True)},
 		{"", false, 0, false, ``, ``, G(False)},
+		{"", false, 0, false, ``, ``, Seq(True, Seq(G(True), False))},
+		{"", false, 0, false, ``, ``, Seq(G(True), False)},
 		{"AAA", true, 3, false, `"AAA"`, ``, G(Q0(T("A")))},
 		{"AAA", true, 3, false, `"A","A","A"`, ``, Q0(G(T("A")))},
 
@@ -72,11 +74,11 @@ func TestGroupInjectAndRefer(t *testing.T) {
 		{"1246", false, 0, false, ``, ``, Inject(zeroes, Seq(Dot, Dot, Dot, Dot))},
 
 		{"+1.e-2 == +1.e-2", true, 16, false, `"num"="+1.e-2"`, ``, patJudge},
-		{"+1.e-2 == .1e2", false, 0, false, `"num"="+1.e-2"`, ``, patJudge},
+		{"+1.e-2 == .1e2", false, 0, false, ``, ``, patJudge},
 		{"+1.e-2 != .1e2", true, 14, false, `"num"="+1.e-2"`, ``, patJudge},
-		{"+1.e-2 != +1.e-2", false, 0, false, `"num"="+1.e-2"`, ``, patJudge},
+		{"+1.e-2 != +1.e-2", false, 0, false, ``, ``, patJudge},
 
-		{"ABC", false, 0, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefB(""))},
+		{"ABC", false, 0, false, ``, ``, Seq(G(Dot), Q0(Dot), RefB(""))},
 		{"ABA", true, 3, false, `"A"`, ``, Seq(G(Dot), Q0(Dot), RefB(""))},
 	}
 

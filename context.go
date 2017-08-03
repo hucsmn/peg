@@ -19,13 +19,13 @@ type context struct {
 	isret  bool
 	ret    returnValues // allow accessing from pat.match(ctx)
 
-	// Call stack
-	levels    int // execute(pat) won't push callstack, use additional counter instead
-	callstack []stackFrame
-
 	// Groups
 	groups      []string
 	namedGroups map[string]string
+
+	// Call stack
+	levels    int // execute(pat) won't push callstack, use additional counter instead
+	callstack []stackFrame
 
 	// Grammar tree construction
 	scopes   []map[string]Pattern
@@ -41,17 +41,21 @@ type localValues struct {
 
 // Return values of pattern match
 type returnValues struct {
-	ok bool
-	n  int
+	ok          bool
+	n           int
+	groups      []string
+	namedGroups map[string]string
 }
 
 // Callstack frame.
 type stackFrame struct {
-	pat    Pattern
-	at     int
-	n      int
-	locals localValues
-	levels int
+	pat         Pattern
+	at          int
+	n           int
+	locals      localValues
+	levels      int
+	groups      []string
+	namedGroups map[string]string
 }
 
 // Incomplete grammar tree construction.
@@ -115,11 +119,13 @@ func (ctx *context) call(callee Pattern) error {
 		return errorCallstackOverflow
 	}
 	ctx.callstack = append(ctx.callstack, stackFrame{
-		pat:    ctx.pat,
-		at:     ctx.at,
-		n:      ctx.n,
-		locals: ctx.locals,
-		levels: ctx.levels,
+		pat:         ctx.pat,
+		at:          ctx.at,
+		n:           ctx.n,
+		locals:      ctx.locals,
+		levels:      ctx.levels,
+		groups:      ctx.groups,
+		namedGroups: ctx.namedGroups,
 	})
 	ctx.levels++
 
@@ -131,6 +137,8 @@ func (ctx *context) call(callee Pattern) error {
 	ctx.locals = localValues{}
 	ctx.isret = false
 	ctx.ret = returnValues{}
+	ctx.groups = nil
+	ctx.namedGroups = nil
 
 	return nil
 }
@@ -161,12 +169,22 @@ func (ctx *context) execute(callee Pattern) error {
 
 // Returns to uplevel, predicates if matched, empty text is matched text.
 func (ctx *context) returnsPredication(ok bool) error {
-	return ctx.returns(returnValues{ok: ok, n: 0})
+	return ctx.returns(returnValues{
+		ok:          ok,
+		n:           0,
+		groups:      ctx.groups,
+		namedGroups: ctx.namedGroups,
+	})
 }
 
 // Returns to uplevel, the consumed text is matched.
 func (ctx *context) returnsMatched() error {
-	return ctx.returns(returnValues{ok: true, n: ctx.n})
+	return ctx.returns(returnValues{
+		ok:          true,
+		n:           ctx.n,
+		groups:      ctx.groups,
+		namedGroups: ctx.namedGroups,
+	})
 }
 
 // Returns to uplevel.
@@ -189,6 +207,24 @@ func (ctx *context) returns(ret returnValues) error {
 		ctx.n = frame.n
 		ctx.locals = frame.locals
 		ctx.levels = frame.levels
+		ctx.groups = frame.groups
+		ctx.namedGroups = frame.namedGroups
+
+		// update groups
+		if ret.ok {
+			if len(ctx.groups) == 0 {
+				ctx.groups = ret.groups
+			} else {
+				ctx.groups = append(ctx.groups, ret.groups...)
+			}
+			if len(ctx.namedGroups) == 0 {
+				ctx.namedGroups = ret.namedGroups
+			} else {
+				for n, g := range ret.namedGroups {
+					ctx.namedGroups[n] = g
+				}
+			}
+		}
 	} else {
 		// terminate pattern matching normally
 		ctx.pat = nil
@@ -297,12 +333,29 @@ func (ctx *context) refer(grpname string) string {
 	}
 
 	if grpname != "" {
-		return ctx.namedGroups[grpname]
-	}
-	if len(ctx.groups) == 0 {
+		g, ok := ctx.namedGroups[grpname]
+		if ok {
+			return g
+		}
+		for i := len(ctx.callstack) - 1; i >= 0; i-- {
+			g, ok := ctx.callstack[i].namedGroups[grpname]
+			if ok {
+				return g
+			}
+		}
 		return ""
 	}
-	return ctx.groups[len(ctx.groups)-1]
+
+	if len(ctx.groups) != 0 {
+		return ctx.groups[len(ctx.groups)-1]
+	}
+	for i := len(ctx.callstack) - 1; i >= 0; i-- {
+		groups := ctx.callstack[i].groups
+		if len(groups) != 0 {
+			return groups[len(groups)-1]
+		}
+	}
+	return ""
 }
 
 // Pushes a constructed capture (terminal or non-terminal).
