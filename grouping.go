@@ -32,6 +32,9 @@ func NG(grpname string, pat Pattern) Pattern {
 }
 
 // Trigger invokes user defined hook with the text matched.
+//
+// Note that, the hook could be triggered when the inner pattern was matched
+// while the parent pattern is later proved to be dismatched.
 func Trigger(hook func(string, Position) error, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -40,6 +43,9 @@ func Trigger(hook func(string, Position) error, pat Pattern) Pattern {
 }
 
 // Save stores the text matched to given pointer.
+//
+// Note that, the action could be triggered when the inner pattern was matched
+// while the parent pattern is later proved to be dismatched.
 func Save(dst *string, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -56,6 +62,9 @@ func newSaveHook(dst *string) func(string, Position) error {
 }
 
 // Send sends the text matched to given channel.
+//
+// Note that, the action could be triggered when the inner pattern was matched
+// while the parent pattern is later proved to be dismatched.
 func Send(dst chan<- string, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -73,6 +82,9 @@ func newSendHook(dst chan<- string) func(string, Position) error {
 
 // SendToken wraps the text matched as a token, then sends it to the given
 // channel.
+//
+// Note that, the action could be triggered when the inner pattern was matched
+// while the parent pattern is later proved to be dismatched.
 func SendToken(dst chan<- Token, toktype int, pat Pattern) Pattern {
 	return &patternTrigger{
 		pat:     pat,
@@ -95,6 +107,9 @@ func newSendTokenHook(dst chan<- Token, toktype int) func(string, Position) erro
 // Inject attaches an injector to given pattern which checks the matched text
 // after matched, then determines whether anything should be matched and
 // how many bytes to consume.
+//
+// Note that, minimum of the original consumed bytes and the injector's
+// returned bytes number would be taken.
 func Inject(fn func(string) (int, bool), pat Pattern) Pattern {
 	if fn == nil {
 		return pat
