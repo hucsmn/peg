@@ -204,9 +204,6 @@ func TestBasicPatterns(t *testing.T) {
 		{"、", true, 3, false, ``, ``, U("Punct")},
 		{" ", true, 1, false, ``, ``, U("White_Space")},
 		{"你好", false, 0, false, ``, ``, U("Han", "-Letter")},
-		{"「」", true, 3, false, ``, ``, U("Sentence_Terminal", "Quotation_Mark")},
-		{"。", true, 3, false, ``, ``, U("Sentence_Terminal", "Quotation_Mark")},
-		{"、", false, 0, false, ``, ``, U("Sentence_Terminal", "Quotation_Mark")},
 	}
 
 	for _, d := range data {
