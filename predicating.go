@@ -63,17 +63,23 @@ type (
 )
 
 // Test predicates if pattern is matched, consuming no text.
+//
+// Note that, if predicates true, groups/parse captures won't be discarded.
 func Test(pat Pattern) Pattern {
 	return &patternPredicate{not: false, pat: pat}
 }
 
 // Not predicates if pattern is dismatched, consuming no text.
+//
+// Note that, if predicates true, groups/parse captures won't be discarded.
 func Not(pat Pattern) Pattern {
 	return &patternPredicate{not: true, pat: pat}
 }
 
 // And searches the patterns in order to predicate if all the pattern
 // is matched at current position. It consumes no text.
+//
+// Note that, if predicates true, groups/parse captures won't be discarded.
 func And(pats ...Pattern) Pattern {
 	if len(pats) == 0 {
 		return True
@@ -83,6 +89,8 @@ func And(pats ...Pattern) Pattern {
 
 // Or searches the patterns in order to predicate if any the pattern
 // is matched at current position. It consumes no text.
+//
+// Note that, if predicates true, groups/parse captures won't be discarded.
 func Or(pats ...Pattern) Pattern {
 	if len(pats) == 0 {
 		return False
@@ -92,12 +100,18 @@ func Or(pats ...Pattern) Pattern {
 
 // When tests the given condition but consumes no text, then determines to
 // execute then-branch or just predicates false.
+//
+// Note that, if cond predicates true, groups/parse captures won't be
+// discarded.
 func When(cond, then Pattern) Pattern {
 	return &patternIf{cond: cond, yes: then, no: False}
 }
 
 // If tests the given condition but consumes no text, then determines to
 // execute yes-branch or no-branch.
+//
+// Note that, if cond predicates true, groups/parse captures won't be
+// discarded.
 func If(cond, yes, no Pattern) Pattern {
 	return &patternIf{cond: cond, yes: yes, no: no}
 }
@@ -105,6 +119,9 @@ func If(cond, yes, no Pattern) Pattern {
 // Switch tests cond-then pairs in order, executes then-branch if cond is true.
 // If there is no true cond, executes the optional otherwise-branch,
 // or just predicates false if there is no otherwise-branch.
+//
+// Note that, if cond predicates true, groups/parse captures won't be
+// discarded.
 func Switch(cond, then Pattern, rest ...Pattern) Pattern {
 	pat := &patternSwitch{}
 	pat.cases = append(pat.cases, struct {
