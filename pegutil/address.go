@@ -39,7 +39,9 @@ var (
 				peg.T("::"),
 				peg.Alt(
 					peg.Seq(
-						peg.Jmn(1, 5, SimpleHexUint16, peg.T(":")),
+						peg.Jmn(1, 5,
+							peg.Seq(SimpleHexUint16, peg.Not(peg.T("."))), // avoid matches ipv4 part
+							peg.T(":")),
 						peg.Seq(peg.T(":"), IPv4)),
 					IPv4))),
 		// ellipsis without trailing 32-bit dot-decimals
@@ -150,6 +152,20 @@ var (
 			peg.Q01(peg.Seq(peg.T("#"), peg.NG("fragment", peg.Q0(uriQueryFragmentRune))))))
 )
 
+// Useful web things
+var (
+	webLetterHypen = peg.R('a', 'z', 'A', 'Z', '-', '-')
+
+	// URL slug.
+	Slug = peg.Q1(webLetterHypen)
+
+	// DNS domain name.
+	Domain = peg.Trunc(253,
+		peg.Seq(
+			peg.Jmn(1, 127, peg.Qmn(1, 63, webLetterHypen), peg.Seq(peg.T("."))),
+			peg.Q01(peg.T("."))))
+)
+
 // EMail address described in RFC 5322.
 //
 // This is a rewrite of the regex taking from http://emailregex.com/ in PEG.
@@ -167,7 +183,7 @@ var (
 				'\x01', '\x08',
 				'\x0b', '\x0c',
 				'\x0e', '\x1f',
-				'\x21', '\x21',
+				'\x20', '\x21',
 				'\x23', '\x5b',
 				'\x5d', '\x7f'))),
 		peg.T(`"`))
@@ -175,47 +191,34 @@ var (
 		peg.T(`[`),
 		peg.Alt(
 			peg.Seq(
-				peg.Q0(peg.Alt(ASCIILetterDigit, peg.T("-"))),
+				peg.Q0(peg.Seq(peg.Alt(ASCIILetterDigit, peg.T("-")), peg.Not(peg.T(":")))),
 				ASCIILetterDigit,
 				peg.T(":"),
 				peg.Q1(peg.Alt(
-					peg.Seq(peg.T(`\`),
-						peg.R(
-							'\x01', '\x09',
-							'\x0b', '\x0c',
-							'\x0e', '\x7f')),
 					peg.R(
 						'\x01', '\x08',
 						'\x0b', '\x0c',
 						'\x0e', '\x1f',
 						'\x21', '\x5a',
-						'\x53', '\x7f')))),
+						'\x5e', '\x7f'),
+					peg.Seq(peg.T(`\`),
+						peg.R(
+							'\x01', '\x09',
+							'\x0b', '\x0c',
+							'\x0e', '\x7f'))))),
 			IPv4),
 		peg.T(`]`))
 
 	EMail = peg.Seq(
-		peg.NG("local", peg.Alt(
+		peg.NG("local", peg.Trunc(64, peg.Alt(
 			emailLocalQuoted,
-			peg.J1(peg.Q1(emailLocalRune), peg.T(".")))),
+			peg.J1(peg.Q1(emailLocalRune), peg.T("."))))),
 		peg.T("@"),
-		peg.NG("domain", peg.Alt(
+		peg.NG("domain", peg.Trunc(255, peg.Alt(
 			emailDomainData,
-			Domain)))
-)
-
-// Useful web things
-var (
-	webLetterHypen = peg.R('a', 'z', 'A', 'Z', '-', '-')
-
-	// URL slug.
-	Slug = peg.Q1(webLetterHypen)
-
-	// DNS domain name.
-	Domain = peg.Trunc(253,
-		peg.Seq(
-			peg.Qmn(1, 63, webLetterHypen),
-			peg.Qmn(0, 126, peg.Seq(peg.T("."), peg.Qmn(1, 63, webLetterHypen))),
-			peg.Q01(peg.T("."))))
+			peg.Seq(
+				peg.J1(peg.Q1(peg.Alt(ASCIILetterDigit, peg.T("-"))), peg.T(".")),
+				peg.Q01(peg.T(".")))))))
 )
 
 // helpers.
@@ -223,13 +226,21 @@ var (
 func ipv6EllipsisIPv4(s string) (n int, ok bool) {
 	split := strings.Split(s, "::")
 	left := strings.Split(split[0], ":")
+	nleft := len(left)
+	if split[0] == "" {
+		nleft = 0
+	}
 	noipv4 := strings.TrimSuffix(strings.TrimRight(split[1], ".0123456789"), ":")
 	right := strings.Split(noipv4, ":")
+	nright := len(right)
+	if noipv4 == "" {
+		nright = 0
+	}
 
-	if len(left)+len(right) <= 5 {
+	if nleft+nright <= 5 {
 		return len(s), true
 	}
-	if len(left)+len(right) <= 7 {
+	if nleft+nright <= 7 {
 		return len(split[0]) + 2 + len(noipv4), true
 	}
 	right = right[:7-len(left)]
@@ -240,9 +251,17 @@ func ipv6EllipsisIPv4(s string) (n int, ok bool) {
 func ipv6EllipsisNoIPv4(s string) (n int, ok bool) {
 	split := strings.Split(s, "::")
 	left := strings.Split(split[0], ":")
+	nleft := len(left)
+	if split[0] == "" {
+		nleft = 0
+	}
 	right := strings.Split(split[1], ":")
+	nright := len(right)
+	if split[1] == "" {
+		nright = 0
+	}
 
-	if len(left)+len(right) <= 7 {
+	if nleft+nright <= 7 {
 		return len(s), true
 	}
 	right = right[:7-len(left)]
