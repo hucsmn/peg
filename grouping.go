@@ -238,9 +238,9 @@ func (pat *patternGrouping) String() string {
 }
 
 func (pat *patternTrigger) String() string {
-	return fmt.Sprintf("%p(%s)", pat.label, pat.trigger, pat.pat)
+	return fmt.Sprintf("%s(%s)", pat.label, pat.pat)
 }
 
 func (pat *patternInjector) String() string {
-	return fmt.Sprintf("%p(%s)", pat.label, pat.inject, pat.pat)
+	return fmt.Sprintf("%s(%s)", pat.label, pat.pat)
 }
