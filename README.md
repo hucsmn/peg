@@ -1,5 +1,8 @@
 # peg
 
+[![Go Doc](https://godoc.org/github.com/hucsmn/peg?status.png)](https://godoc.org/github.com/hucsmn/peg)
+[![Build Status](https://travis-ci.org/hucsmn/peg.svg?branch=master)](https://travis-ci.org/hucsmn/peg)
+
 Parsing Expression Grammars (PEG) is a powerful tool for pattern matching,
 text extraction and parse tree building. The PEG text matching is greedy,
 that is, the qualified patterns try to match as more bytes as it could.
