@@ -74,6 +74,15 @@ CC(nontermcons, pat), CT(termcons, pat)
 ```
 # Common mistakes
 
+## Greedy qualifiers
+
+The greedy qualifiers may result in failure of the succeeding patterns.
+For example, `Seq(Q0(R('0', '9')), S("02468"), T(" is even"))` is incorrect,
+because the greedy `Q0(R('0', '9'))` consumes the last digit, thus the
+following `S("02468")` would always dismatch. To make everything right,
+`Q0(R('0', '9'))` should be replaced by a pattern like
+`Q0(Seq(R('0', '9'), Test(R('0', '9'))))`, which won't consume the last digit.
+
 ## Unreachable branches
 
 Branch of `Seq` or `Alt` could be unreachable, considering that Seq searches the
