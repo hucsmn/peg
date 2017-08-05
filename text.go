@@ -24,11 +24,11 @@ type (
 		tree        prefixTree
 	}
 
-	patternTextRefered struct {
+	patternTextReferring struct {
 		grpname string
 	}
 
-	patternBackwardPredicateRefered struct {
+	patternBackwardPredicateReferring struct {
 		grpname string
 	}
 
@@ -155,7 +155,7 @@ func TSI(textset ...string) Pattern {
 //
 // Use "" if the name grpname does not exist.
 func Ref(grpname string) Pattern {
-	return &patternTextRefered{grpname}
+	return &patternTextReferring{grpname}
 }
 
 // RefB predicates if the text in the group named grpname matches in backward.
@@ -164,7 +164,7 @@ func Ref(grpname string) Pattern {
 //
 // Use "" if the name grpname does not exist.
 func RefB(grpname string) Pattern {
-	return &patternBackwardPredicateRefered{grpname}
+	return &patternBackwardPredicateReferring{grpname}
 }
 
 // Matches text.
@@ -296,8 +296,8 @@ func (tree prefixTree) search(s string) (int, bool) {
 	return 0, false
 }
 
-// Matches refered text from groups.
-func (pat *patternTextRefered) match(ctx *context) error {
+// Matches referring text from groups.
+func (pat *patternTextReferring) match(ctx *context) error {
 	text := ctx.refer(pat.grpname)
 	if ctx.readNext(len(text)) == text {
 		ctx.consume(len(text))
@@ -306,8 +306,8 @@ func (pat *patternTextRefered) match(ctx *context) error {
 	return ctx.returnsPredication(false)
 }
 
-// Predicates refered text from groups in backward.
-func (pat *patternBackwardPredicateRefered) match(ctx *context) error {
+// Predicates referring text from groups in backward.
+func (pat *patternBackwardPredicateReferring) match(ctx *context) error {
 	text := ctx.refer(pat.grpname)
 	return ctx.returnsPredication(ctx.readPrev(len(text)) == text)
 }
@@ -335,14 +335,14 @@ func (pat *patternTextSet) String() string {
 	return fmt.Sprintf("(%s)", strings.Join(strs, "|"))
 }
 
-func (pat *patternTextRefered) String() string {
+func (pat *patternTextReferring) String() string {
 	if pat.grpname == "" {
 		return "%%"
 	}
 	return fmt.Sprintf("%%%q%%", pat.grpname)
 }
 
-func (pat *patternBackwardPredicateRefered) String() string {
+func (pat *patternBackwardPredicateReferring) String() string {
 	if pat.grpname == "" {
 		return "back? %%"
 	}
