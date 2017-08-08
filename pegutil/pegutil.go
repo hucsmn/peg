@@ -1,11 +1,21 @@
-package pegutil
+// Package pegutil provides extra utils for the Parsing Expression Grammars.
+//
+// Following categories of utils are provided by this package:
+//     Rune sets (including *Digit, ASCII*, <common unicode rune sets>)
+//     Bare integers (including *Integer, *Uint*, SimpleHexUint*)
+//     Integer helpers (*IntegerBetweenm, NoRedundantZeroes, ...).
+//     Simple literals (including Float, Identifier, String, Newline, ...)
+//     TCP/IP addresses (including MAC, EUI64, IPv4, IPv6, CIDR, ...)
+//     URI addresses (including URI, EMail, ...)
+// Ths package API is currently volatile.
+package pegutil //import "github.com/hucsmn/peg/pegutil"
 
 import (
 	"github.com/hucsmn/peg"
 )
 
-// Vocabulary is all the variables defined in this package.
-var Vocabulary = map[string]peg.Pattern{
+// Scope contains all the variables defined in this package.
+var Scope = map[string]peg.Pattern{
 	"OctDigit": OctDigit,
 	"DecDigit": DecDigit,
 	"HexDigit": HexDigit,
