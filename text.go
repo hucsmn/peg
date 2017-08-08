@@ -298,6 +298,10 @@ func (tree prefixTree) search(s string) (int, bool) {
 
 // Matches referring text from groups.
 func (pat *patternTextReferring) match(ctx *context) error {
+	if ctx.config.DisableGrouping {
+		return errorReferDisabled
+	}
+
 	text := ctx.refer(pat.grpname)
 	if ctx.readNext(len(text)) == text {
 		ctx.consume(len(text))
@@ -308,6 +312,10 @@ func (pat *patternTextReferring) match(ctx *context) error {
 
 // Predicates referring text from groups in backward.
 func (pat *patternBackwardPredicateReferring) match(ctx *context) error {
+	if ctx.config.DisableGrouping {
+		return errorReferDisabled
+	}
+
 	text := ctx.refer(pat.grpname)
 	return ctx.returnsPredication(ctx.readPrev(len(text)) == text)
 }

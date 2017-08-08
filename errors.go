@@ -7,6 +7,7 @@ import (
 var (
 	errorDismatch            = errorf("the pattern is dismatched")
 	errorNotFullMatched      = errorf("the pattern is not full matched")
+	errorReferDisabled       = errorf("group text referring when grouping is disabled")
 	errorCornerCase          = errorf("this corner case should never be reached")
 	errorCallstackOverflow   = errorf("callstack overflow")
 	errorReachedLoopLimit    = errorf("loop limit is reached")
