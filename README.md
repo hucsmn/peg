@@ -14,12 +14,13 @@ package design was strongly influenced by lua's [LPeg](http://www.inf.puc-rio.br
 
 # Overlook of methods
 
-There are four methods for PEG pattern matching, text extracting and
+There are five methods for PEG pattern matching, text extracting and
 parse tree building:
 
 ```
 MatchedPrefix(pat, text) (prefix, ok)
 IsFullMatched(pat, text) ok
+Parse(pat, text) (captures, err)
 Match(pat, text) (result, err)
 ConfiguredMatch(config, pat, text) (result, err)
 ```

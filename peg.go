@@ -10,10 +10,11 @@
 //
 // Overlook of methods
 //
-// There are four methods for PEG attern matching, text extracting and
+// There are five methods for PEG attern matching, text extracting and
 // parse tree building:
 //     MatchedPrefix(pat, text) (prefix, ok)
 //     IsFullMatched(pat, text) ok
+//     Parse(pat, text) (captures, err)
 //     Match(pat, text) (result, err)
 //     ConfiguredMatch(config, pat, text) (result, err)
 // The configuration `Config` of pattern matching determines max recursion/loop
@@ -182,7 +183,44 @@ type (
 
 // MatchedPrefix returns the matched prefix of text when successfully matched.
 func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
-	config := defaultConfig
+	return defaultConfig.MatchedPrefix(pat, text)
+}
+
+// IsFullMatched tells if given pattern matches the full text.
+// It is recommended to use Seq(Alt(...), EOF) rather than use Alt(...) when
+// testing IsFullMatched.
+// For example, IsFullMatched(Alt(T("match"), T("match more")), "match more")
+// returns false rather than true counter-intuitively.
+func IsFullMatched(pat Pattern, text string) bool {
+	return defaultConfig.IsFullMatched(pat, text)
+}
+
+// Parse runs pattern matching on given text, guaranteeing that the text must
+// only be full-matched when success.
+func Parse(pat Pattern, text string) (caps []Capture, err error) {
+	return defaultConfig.Parse(pat, text)
+}
+
+// Match runs pattern matching on given text, using the default configuration.
+// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
+// while line-column counting, grouping and parse capturing is enabled.
+// Returns nil result if any error occurs.
+func Match(pat Pattern, text string) (result *Result, err error) {
+	return defaultConfig.Match(pat, text)
+}
+
+// ConfiguredMatch runs pattern matching on text, using given configuration.
+// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
+// while line-column counting, grouping and parse capturing is enabled.
+// Returns nil result if any error occurs.
+func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, err error) {
+	return config.Match(pat, text)
+}
+
+// MatchedPrefix returns the matched prefix of text when successfully matched.
+func (cfg Config) MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
+	// disable capturing.
+	config := cfg
 	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
 	r, err := ConfiguredMatch(config, pat, text)
@@ -197,32 +235,45 @@ func MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 // testing IsFullMatched.
 // For example, IsFullMatched(Alt(T("match"), T("match more")), "match more")
 // returns false rather than true counter-intuitively.
-func IsFullMatched(pat Pattern, text string) bool {
-	config := defaultConfig
+func (cfg Config) IsFullMatched(pat Pattern, text string) bool {
+	// disable capturing.
+	config := cfg
 	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
 	r, err := ConfiguredMatch(config, pat, text)
 	return err == nil && r.Ok && r.N == len(text)
 }
 
+// Parse runs pattern matching on given text, guaranteeing that the text must
+// only be full-matched when success.
+func (cfg Config) Parse(pat Pattern, text string) (caps []Capture, err error) {
+	// enable capturing.
+	config := cfg
+	config.DisableLineColumnCounting = false
+	config.DisableCapturing = false
+	r, err := ConfiguredMatch(config, pat, text)
+	if err != nil {
+		return nil, err
+	}
+	if !r.Ok {
+		return nil, errorDismatch
+	}
+	if r.N != len(text) {
+		return nil, errorNotFullMatched
+	}
+	return r.Captures, nil
+}
+
 // Match runs pattern matching on given text, using the default configuration.
 // The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
 // while line-column counting, grouping and parse capturing is enabled.
 // Returns nil result if any error occurs.
-func Match(pat Pattern, text string) (result *Result, err error) {
-	return ConfiguredMatch(defaultConfig, pat, text)
-}
-
-// ConfiguredMatch runs pattern matching on text, using given configuration.
-// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
-// while line-column counting, grouping and parse capturing is enabled.
-// Returns nil result if any error occurs.
-func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, err error) {
+func (cfg Config) Match(pat Pattern, text string) (result *Result, err error) {
 	if pat == nil {
 		return nil, errorNilMainPattern
 	}
 
-	ctx := newContext(pat, text, config)
+	ctx := newContext(pat, text, cfg)
 	err = ctx.match()
 	if err != nil {
 		return nil, err
@@ -265,5 +316,6 @@ func (v *Variable) String() string {
 }
 
 func (tok *Token) String() string {
-	return fmt.Sprintf("token_%d%q@%s", tok.Type, tok.Value, tok.Position)
+	return fmt.Sprintf("token_%d%q@%s",
+		tok.Type, tok.Value, tok.Position.String())
 }
