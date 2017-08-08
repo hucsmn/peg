@@ -10,13 +10,12 @@
 //
 // Overlook of methods
 //
-// There are five methods for PEG attern matching, text extracting and
+// There are four methods for PEG attern matching, text extracting and
 // parse tree building:
 //     MatchedPrefix(pat, text) (prefix, ok)
 //     IsFullMatched(pat, text) ok
 //     Parse(pat, text) (captures, err)
 //     Match(pat, text) (result, err)
-//     ConfiguredMatch(config, pat, text) (result, err)
 // The configuration `Config` of pattern matching determines max recursion/loop
 // times and whether some functionality is enabled/disabled.
 // The result of Result type contains: is matched, count of bytes matched,
@@ -209,21 +208,13 @@ func Match(pat Pattern, text string) (result *Result, err error) {
 	return defaultConfig.Match(pat, text)
 }
 
-// ConfiguredMatch runs pattern matching on text, using given configuration.
-// The default configuration uses DefaultCallstackLimit and DefaultLoopLimit,
-// while line-column counting, grouping and parse capturing is enabled.
-// Returns nil result if any error occurs.
-func ConfiguredMatch(config Config, pat Pattern, text string) (result *Result, err error) {
-	return config.Match(pat, text)
-}
-
 // MatchedPrefix returns the matched prefix of text when successfully matched.
 func (cfg Config) MatchedPrefix(pat Pattern, text string) (prefix string, ok bool) {
 	// disable capturing.
 	config := cfg
 	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
-	r, err := ConfiguredMatch(config, pat, text)
+	r, err := config.Match(pat, text)
 	if err != nil || !r.Ok {
 		return "", false
 	}
@@ -240,7 +231,7 @@ func (cfg Config) IsFullMatched(pat Pattern, text string) bool {
 	config := cfg
 	config.DisableLineColumnCounting = true
 	config.DisableCapturing = true
-	r, err := ConfiguredMatch(config, pat, text)
+	r, err := config.Match(pat, text)
 	return err == nil && r.Ok && r.N == len(text)
 }
 
@@ -251,7 +242,7 @@ func (cfg Config) Parse(pat Pattern, text string) (caps []Capture, err error) {
 	config := cfg
 	config.DisableLineColumnCounting = false
 	config.DisableCapturing = false
-	r, err := ConfiguredMatch(config, pat, text)
+	r, err := config.Match(pat, text)
 	if err != nil {
 		return nil, err
 	}
