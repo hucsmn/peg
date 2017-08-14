@@ -1,11 +1,8 @@
 // Package peg implements the Parsing Expression Grammars inspired by LPeg.
 //
-// Parsing Expression Grammars (PEG) is a powerful tool for pattern matching,
-// text extraction and parse tree building. The PEG text matching is greedy,
-// that is, the qualified patterns try to match as more bytes as it could.
-// The PEG parsers are top-down parsers similar to LL parsers. Thus, left
-// recursion should be particularly avoided when writing grammar rules. The
-// package design was strongly influenced by lua's LPeg, see:
+// This package provide the Parsing Expression Grammars (PEGs) support,
+// which was a powerful pattern matching and top-down parsing tool.
+// The package design was strongly influenced by lua's LPeg, see:
 // http://www.inf.puc-rio.br/~roberto/lpeg/
 //
 // Overlook of methods
