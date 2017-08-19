@@ -95,13 +95,13 @@ import (
 // Default limits of pattern matching.
 const (
 	DefaultCallstackLimit = 500
-	DefaultLoopLimit      = 500
+	DefaultRepeatLimit    = 500
 )
 
 var (
 	defaultConfig = Config{
 		CallstackLimit:            DefaultCallstackLimit,
-		LoopLimit:                 DefaultLoopLimit,
+		RepeatLimit:               DefaultRepeatLimit,
 		DisableLineColumnCounting: false,
 		DisableGrouping:           false,
 		DisableCapturing:          false,
@@ -120,8 +120,8 @@ type (
 		// Maximum callstack size, zero or negative for unlimited.
 		CallstackLimit int
 
-		// Maximum loop number for qualifiers, zero or negative for unlimited.
-		LoopLimit int
+		// Maximum qualifier repeatition times, zero or negative for unlimited.
+		RepeatLimit int
 
 		// Determines if the position calculation is disabled.
 		DisableLineColumnCounting bool

@@ -161,21 +161,21 @@ func RefB(grpname string) Pattern {
 
 // Matches text.
 func (pat *patternText) match(ctx *context) error {
-	text := ctx.readNext(len(pat.text))
+	text := ctx.next(len(pat.text))
 	if pat.insensitive {
 		text = foldCase(text)
 	}
 
 	if text == pat.text {
 		ctx.consume(len(text))
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 // Predicates backward text.
 func (pat *patternBackwardPredicate) match(ctx *context) error {
-	return ctx.returnsPredication(ctx.readPrev(len(pat.text)) == pat.text)
+	return ctx.predicates(ctx.previous(len(pat.text)) == pat.text)
 }
 
 // Matches text set.
@@ -193,12 +193,12 @@ func (pat *patternTextSet) match(ctx *context) error {
 			stack = stack[:len(stack)-1]
 			if state.term {
 				ctx.consume(state.n)
-				return ctx.returnsMatched()
+				return ctx.commit()
 			}
 			continue
 		}
 
-		s := ctx.readNext(state.n + state.width)[state.n:]
+		s := ctx.next(state.n + state.width)[state.n:]
 		if pat.insensitive {
 			s = foldCase(s)
 		}
@@ -212,7 +212,7 @@ func (pat *patternTextSet) match(ctx *context) error {
 			prefixTree: state.subs[i],
 		})
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 // assumes that textset is owned by set.
@@ -235,11 +235,11 @@ func (pat *patternTextReferring) match(ctx *context) error {
 	}
 
 	text := ctx.refer(pat.grpname)
-	if ctx.readNext(len(text)) == text {
+	if ctx.next(len(text)) == text {
 		ctx.consume(len(text))
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 // Predicates referring text from groups in backward.
@@ -249,7 +249,7 @@ func (pat *patternBackwardPredicateReferring) match(ctx *context) error {
 	}
 
 	text := ctx.refer(pat.grpname)
-	return ctx.returnsPredication(ctx.readPrev(len(text)) == text)
+	return ctx.predicates(ctx.previous(len(text)) == text)
 }
 
 func (pat *patternText) String() string {

@@ -197,12 +197,12 @@ func (pat *patternSequence) match(ctx *context) error {
 
 		ret := ctx.ret
 		if !ret.ok {
-			return ctx.returnsPredication(false)
+			return ctx.predicates(false)
 		}
 		ctx.consume(ret.n)
 		ctx.locals.i++
 	}
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Matches if any sub-pattern matches, searches in order.
@@ -219,17 +219,17 @@ func (pat *patternAlternative) match(ctx *context) error {
 		ret := ctx.ret
 		if ret.ok {
 			ctx.consume(ret.n)
-			return ctx.returnsMatched()
+			return ctx.commit()
 		}
 		ctx.locals.i++
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 // Matches at least n times.
 func (pat *patternQualifierAtLeast) match(ctx *context) error {
 	for {
-		if ctx.reachedLoopLimit() {
+		if ctx.reachedRepeatLimit(ctx.locals.i) {
 			return errorReachedLoopLimit
 		}
 
@@ -240,9 +240,9 @@ func (pat *patternQualifierAtLeast) match(ctx *context) error {
 		ret := ctx.ret
 		if !ret.ok {
 			if ctx.locals.i < pat.n {
-				return ctx.returnsPredication(false)
+				return ctx.predicates(false)
 			}
-			return ctx.returnsMatched()
+			return ctx.commit()
 		}
 		ctx.consume(ret.n)
 		ctx.locals.i++
@@ -257,16 +257,16 @@ func (pat *patternQualifierOptional) match(ctx *context) error {
 
 	ret := ctx.ret
 	if !ret.ok {
-		return ctx.returnsPredication(true)
+		return ctx.predicates(true)
 	}
 	ctx.consume(ret.n)
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Matches m to n times.
 func (pat *patternQualifierRange) match(ctx *context) error {
 	for ctx.locals.i < pat.n {
-		if ctx.reachedLoopLimit() {
+		if ctx.reachedRepeatLimit(ctx.locals.i) {
 			return errorReachedLoopLimit
 		}
 
@@ -277,14 +277,14 @@ func (pat *patternQualifierRange) match(ctx *context) error {
 		ret := ctx.ret
 		if !ret.ok {
 			if ctx.locals.i < pat.m {
-				return ctx.returnsPredication(false)
+				return ctx.predicates(false)
 			}
-			return ctx.returnsMatched()
+			return ctx.commit()
 		}
 		ctx.consume(ret.n)
 		ctx.locals.i++
 	}
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 func (pat *patternSequence) String() string {

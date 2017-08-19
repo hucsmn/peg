@@ -146,7 +146,7 @@ func (pat *patternCaptureToken) match(ctx *context) error {
 
 	ret := ctx.ret
 	if !ret.ok {
-		return ctx.returnsPredication(false)
+		return ctx.predicates(false)
 	}
 
 	head := ctx.tell()
@@ -159,7 +159,7 @@ func (pat *patternCaptureToken) match(ctx *context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Captures using customed non-terminal constructor.
@@ -185,7 +185,7 @@ func (pat *patternCaptureTerm) match(ctx *context) error {
 
 	ret := ctx.ret
 	if !ret.ok {
-		return ctx.returnsPredication(false)
+		return ctx.predicates(false)
 	}
 
 	head := ctx.tell()
@@ -198,7 +198,7 @@ func (pat *patternCaptureTerm) match(ctx *context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 func (pat *patternLet) String() string {

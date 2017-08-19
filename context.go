@@ -111,7 +111,7 @@ func (ctx *context) match() error {
 	return nil
 }
 
-// Invoke callee, and backups stack frame and matching state.
+// Snapshots the matching state, then invokes the callee.
 func (ctx *context) call(callee Pattern) error {
 	// backup stack frame
 	if ctx.config.CallstackLimit > 0 &&
@@ -143,8 +143,8 @@ func (ctx *context) call(callee Pattern) error {
 	return nil
 }
 
-// Invoke callee, but do not backups stack frame.
-// No text should be already consumed before execute.
+// Invokes the callee without snapshotting the matching state.
+// No text should be already consumed before an execute() call.
 func (ctx *context) execute(callee Pattern) error {
 	// assert no text already consumed
 	if ctx.n != 0 {
@@ -167,8 +167,9 @@ func (ctx *context) execute(callee Pattern) error {
 	return nil
 }
 
-// Returns to uplevel, predicates if matched, empty text is matched text.
-func (ctx *context) returnsPredication(ok bool) error {
+// Returns to the caller, just predicating if pattern is matched,
+// without consuming any text.
+func (ctx *context) predicates(ok bool) error {
 	return ctx.returns(returnValues{
 		ok:          ok,
 		n:           0,
@@ -177,8 +178,9 @@ func (ctx *context) returnsPredication(ok bool) error {
 	})
 }
 
-// Returns to uplevel, the consumed text is matched.
-func (ctx *context) returnsMatched() error {
+// Returns to the caller, tells that pattern was macthed successfully,
+// and commits the text already consumed.
+func (ctx *context) commit() error {
 	return ctx.returns(returnValues{
 		ok:          true,
 		n:           ctx.n,
@@ -187,7 +189,7 @@ func (ctx *context) returnsMatched() error {
 	})
 }
 
-// Returns to uplevel.
+// Returns to the caller with the given return values.
 func (ctx *context) returns(ret returnValues) error {
 	ctx.isret = true
 	ctx.ret = ret
@@ -232,19 +234,19 @@ func (ctx *context) returns(ret returnValues) error {
 	return nil
 }
 
-// Tests if just returned from a callee.
+// Tests if it was just returned from a callee, and toggles the isret flag off.
 func (ctx *context) justReturned() bool {
 	isret := ctx.isret
 	ctx.isret = false
 	return isret
 }
 
-// Tests if the looping counter reached loop limit.
-func (ctx *context) reachedLoopLimit() bool {
-	return ctx.config.LoopLimit > 0 && ctx.locals.i >= ctx.config.LoopLimit
+// Tests if reached the repeatition times limit.
+func (ctx *context) reachedRepeatLimit(times int) bool {
+	return ctx.config.RepeatLimit > 0 && times >= ctx.config.RepeatLimit
 }
 
-// Moves cursor forward.
+// Moves the cursor forward.
 func (ctx *context) consume(n int) {
 	ctx.n += n
 	ctx.at += n
@@ -264,7 +266,7 @@ func (ctx *context) span() string {
 }
 
 // Reads next n bytes.
-func (ctx *context) readNext(n int) string {
+func (ctx *context) next(n int) string {
 	tail := ctx.text[ctx.at:]
 	if len(tail) < n {
 		return tail
@@ -273,24 +275,25 @@ func (ctx *context) readNext(n int) string {
 }
 
 // Reads previous n bytes.
-func (ctx *context) readPrev(n int) string {
+func (ctx *context) previous(n int) string {
 	if ctx.at < n {
 		return ctx.text[:ctx.at]
 	}
 	return ctx.text[ctx.at-n : ctx.at]
 }
 
-// Reads next rune.
-func (ctx *context) readRune() (r rune, n int) {
+// Reads the next rune.
+// Refers to utf8.DecodeRune for the description of return values.
+func (ctx *context) nextRune() (r rune, n int) {
 	return utf8.DecodeRuneInString(ctx.text[ctx.at:])
 }
 
-// Enter the given namespace, overriding uplevel definitions.
+// Enters the given namespace. The upper level definitions could be overridden.
 func (ctx *context) enter(namespace map[string]Pattern) {
 	ctx.scopes = append(ctx.scopes, namespace)
 }
 
-// Leave current namespace.
+// Leaves current namespace.
 func (ctx *context) leave() {
 	ctx.scopes = ctx.scopes[:len(ctx.scopes)-1]
 }
@@ -306,8 +309,8 @@ func (ctx *context) lookup(name string) Pattern {
 	return nil
 }
 
-// Stores matched text to named group if grpname is non-empty,
-// or push the text to groups.
+// Stores matched text to named group if grpname is abempty,
+// or push the text to groups if grpname is empty.
 func (ctx *context) group(grpname string) {
 	if ctx.config.DisableGrouping {
 		return
@@ -325,8 +328,9 @@ func (ctx *context) group(grpname string) {
 	}
 }
 
-// Gets the text stored in named groups if grpname is non-empty,
-// or gets the the lastest text in groups ("" if nothing in groups).
+// Gets the text stored in named groups if grpname is abempty,
+// or gets the the lastest text in groups if grpname is empty.
+// Returns empty string when not found.
 func (ctx *context) refer(grpname string) string {
 	if ctx.config.DisableGrouping {
 		return ""
@@ -358,7 +362,8 @@ func (ctx *context) refer(grpname string) string {
 	return ""
 }
 
-// Pushes a constructed capture (terminal or non-terminal).
+// Pushes a constructed capture (terminal or non-terminal)
+// to the current non-terminal construction.
 func (ctx *context) push(cap Capture) error {
 	if ctx.config.DisableCapturing {
 		return nil
@@ -373,7 +378,7 @@ func (ctx *context) push(cap Capture) error {
 	return nil
 }
 
-// Begins non-terminal construction.
+// Begins a non-terminal construction.
 func (ctx *context) begin(cons NonTerminalConstructor) {
 	if ctx.config.DisableCapturing {
 		return
@@ -385,7 +390,7 @@ func (ctx *context) begin(cons NonTerminalConstructor) {
 	})
 }
 
-// Ends up current non-terminal construction.
+// Finishes current non-terminal construction.
 func (ctx *context) end(matched bool) error {
 	if ctx.config.DisableCapturing {
 		return nil

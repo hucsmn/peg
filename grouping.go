@@ -187,11 +187,11 @@ func (pat *patternGrouping) match(ctx *context) error {
 
 	ret := ctx.ret
 	if !ret.ok {
-		return ctx.returnsPredication(false)
+		return ctx.predicates(false)
 	}
 	ctx.consume(ret.n)
 	ctx.group(pat.grpname)
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Captures text to trigger a hook.
@@ -202,7 +202,7 @@ func (pat *patternTrigger) match(ctx *context) error {
 
 	ret := ctx.ret
 	if !ret.ok {
-		return ctx.returnsPredication(false)
+		return ctx.predicates(false)
 	}
 
 	head := ctx.tell()
@@ -211,7 +211,7 @@ func (pat *patternTrigger) match(ctx *context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Further validate matched text, determines how many bytes to consume.
@@ -222,12 +222,12 @@ func (pat *patternInjector) match(ctx *context) error {
 
 	ret := ctx.ret
 	if ret.ok {
-		if n, ok := pat.inject(ctx.readNext(ret.n)); ok {
+		if n, ok := pat.inject(ctx.next(ret.n)); ok {
 			ctx.consume(n)
-			return ctx.returnsMatched()
+			return ctx.commit()
 		}
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 func (pat *patternGrouping) String() string {

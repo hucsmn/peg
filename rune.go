@@ -151,22 +151,22 @@ func U(ranges ...string) Pattern {
 
 // Matches any rune.
 func (patternAnyRune) match(ctx *context) error {
-	_, n := ctx.readRune()
+	_, n := ctx.nextRune()
 	if n == 0 {
-		return ctx.returnsPredication(false)
+		return ctx.predicates(false)
 	}
 	ctx.consume(n)
-	return ctx.returnsMatched()
+	return ctx.commit()
 }
 
 // Matches a rune in/not in rune set.
 func (pat *patternRuneSet) match(ctx *context) error {
-	r, n := ctx.readRune()
+	r, n := ctx.nextRune()
 	if n != 0 && pat.has(r) {
 		ctx.consume(n)
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 func (pat *patternRuneSet) set(charset string) {
@@ -239,12 +239,12 @@ func (rs *runesSorter) Swap(i, j int) {
 
 // Matches a rune in/not in range.
 func (pat *patternRuneRange) match(ctx *context) error {
-	r, n := ctx.readRune()
+	r, n := ctx.nextRune()
 	if n != 0 && pat.has(r) {
 		ctx.consume(n)
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 func (pat *patternRuneRange) has(r rune) bool {
@@ -264,13 +264,13 @@ func (pat *patternRuneRange) has(r rune) bool {
 
 // Matches a rune in/not in unicode ranges.
 func (pat *patternUnicodeRanges) match(ctx *context) error {
-	r, n := ctx.readRune()
+	r, n := ctx.nextRune()
 
 	if n != 0 && pat.has(r) {
 		ctx.consume(n)
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 func (pat *patternUnicodeRanges) set(names []string) error {
@@ -301,12 +301,12 @@ func (pat *patternUnicodeRanges) has(r rune) bool {
 
 // Matches a rune in some unicode ranges while not in some other ranges.
 func (pat *patternUnicodeRangesWithExcluding) match(ctx *context) error {
-	r, n := ctx.readRune()
+	r, n := ctx.nextRune()
 	if n != 0 && pat.has(r) {
 		ctx.consume(n)
-		return ctx.returnsMatched()
+		return ctx.commit()
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 func (pat *patternUnicodeRangesWithExcluding) has(r rune) bool {

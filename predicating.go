@@ -149,32 +149,32 @@ func Switch(cond, then Pattern, rest ...Pattern) Pattern {
 
 // Matches empty string if true, dismatches if false.
 func (pat *patternBoolean) match(ctx *context) error {
-	return ctx.returnsPredication(pat.ok)
+	return ctx.predicates(pat.ok)
 }
 
 // Predicates SOL/EOL.
 func (pat *patternLineAnchorPredicate) match(ctx *context) error {
-	p, n := ctx.readPrev(1), ctx.readNext(1)
+	p, n := ctx.previous(1), ctx.next(1)
 
 	if pat.linestart {
 		// SOL matches start of file or just after a "\n"|"\r"|"\r\n".
 		if p == "" {
-			return ctx.returnsPredication(true)
+			return ctx.predicates(true)
 		}
-		return ctx.returnsPredication(
+		return ctx.predicates(
 			p == "\n" || (p == "\r" && n != "\n"))
 	}
 
 	// EOL matches end of file or just before a "\n"|"\r"|"\r\n".
 	if n == "" {
-		return ctx.returnsPredication(true)
+		return ctx.predicates(true)
 	}
-	return ctx.returnsPredication(n == "\r" || (n == "\n" && p != "\r"))
+	return ctx.predicates(n == "\r" || (n == "\n" && p != "\r"))
 }
 
 // Predicates EOF.
 func (patternEOFPredicate) match(ctx *context) error {
-	return ctx.returnsPredication(ctx.readNext(1) == "")
+	return ctx.predicates(ctx.next(1) == "")
 }
 
 // Predicates if sub-pattern matches.
@@ -187,7 +187,7 @@ func (pat *patternPredicate) match(ctx *context) error {
 	if pat.not {
 		ret.ok = !ret.ok
 	}
-	return ctx.returnsPredication(ret.ok)
+	return ctx.predicates(ret.ok)
 }
 
 // Predicates if all the sub-patterns match.
@@ -198,11 +198,11 @@ func (pat *patternAndPredicate) match(ctx *context) error {
 		}
 
 		if !ctx.ret.ok {
-			return ctx.returnsPredication(false)
+			return ctx.predicates(false)
 		}
 		ctx.locals.i++
 	}
-	return ctx.returnsPredication(true)
+	return ctx.predicates(true)
 }
 
 // Predicates if any sub-pattern matches.
@@ -213,11 +213,11 @@ func (pat *patternOrPredicate) match(ctx *context) error {
 		}
 
 		if ctx.ret.ok {
-			return ctx.returnsPredication(true)
+			return ctx.predicates(true)
 		}
 		ctx.locals.i++
 	}
-	return ctx.returnsPredication(false)
+	return ctx.predicates(false)
 }
 
 // Branch `if'.
