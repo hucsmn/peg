@@ -209,6 +209,10 @@ func (pat *patternSequence) match(ctx *context) error {
 func (pat *patternAlternative) match(ctx *context) error {
 	for ctx.locals.i < len(pat.pats) {
 		if !ctx.justReturned() {
+			// optimize for the last choice
+			if ctx.locals.i == len(pat.pats)-1 {
+				return ctx.execute(pat.pats[ctx.locals.i])
+			}
 			return ctx.call(pat.pats[ctx.locals.i])
 		}
 
