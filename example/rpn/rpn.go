@@ -51,7 +51,10 @@ var (
 )
 
 type (
-	Primitive func(*State) error
+	State struct {
+		stack []int
+		vocab map[string]Primitive
+	}
 
 	calculator struct {
 		*State
@@ -63,10 +66,7 @@ type (
 		pat    peg.Pattern
 	}
 
-	State struct {
-		stack []int
-		vocab map[string]Primitive
-	}
+	Primitive func(*State) error
 )
 
 func NewState(vocab map[string]Primitive) *State {
@@ -80,7 +80,7 @@ func NewState(vocab map[string]Primitive) *State {
 	return &State{vocab: vocab}
 }
 
-func Calculate(state *State, source string) *State {
+func (state *State) Calculate(source string) {
 	// Send tokens to the channel by registering customed hooks,
 	// which are later invoked by peg.Match(pat, source).
 	words := make(chan peg.Token, 1)
@@ -119,7 +119,6 @@ func Calculate(state *State, source string) *State {
 	}
 
 	calc.execute()
-	return calc.State
 }
 
 func (calc *calculator) execute() {
@@ -329,7 +328,7 @@ func main() {
 		if isprefix {
 			continue
 		}
-		state = Calculate(state, src)
+		state.Calculate(src)
 		src = ""
 	}
 }
