@@ -65,9 +65,10 @@ B(text), Test(pat), Not(pat), And(pat...), Or(pat...)
 When(cond, pat), If(cond, yes, no), Switch(cond, pat, ..., [otherwise])
 ```
 
-Available pattern qualifiers are:
+Available pattern qualifiers and repeatitions are:
 
 ```
+Skip(n), Until(pat), UntilEndOf(pat)
 Q0(pat), Q1(pat), Qn(atleast, pat)
 Q01(pat), Q0n(atmost, pat), Qnn(exact, pat), Qmn(from, to, pat)
 ```

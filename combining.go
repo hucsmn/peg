@@ -15,6 +15,15 @@ type (
 		pats []Pattern
 	}
 
+	patternSkip struct {
+		n int
+	}
+
+	patternAnyRuneUntil struct {
+		without bool
+		pat     Pattern
+	}
+
 	patternQualifierAtLeast struct {
 		n   int
 		pat Pattern
@@ -54,6 +63,29 @@ func Alt(choices ...Pattern) Pattern {
 		return &patternBoolean{false}
 	}
 	return &patternAlternative{choices}
+}
+
+// Skip matches exactly n runes.
+func Skip(n int) Pattern {
+	if n < 0 {
+		return False
+	}
+	if n == 0 {
+		return True
+	}
+	return &patternSkip{n}
+}
+
+// Until matches any rune until the start of text piece
+// searched by given pattern.
+func Until(pat Pattern) Pattern {
+	return &patternAnyRuneUntil{without: true, pat: pat}
+}
+
+// UntilEndOf matches any rune until the end of text piece
+// searched by given pattern.
+func UntilEndOf(pat Pattern) Pattern {
+	return &patternAnyRuneUntil{without: false, pat: pat}
 }
 
 // Q0 matches the given pattern repeated zero or more times.
@@ -226,11 +258,56 @@ func (pat *patternAlternative) match(ctx *context) error {
 	return ctx.predicates(false)
 }
 
+// Matches exactly n runes.
+func (pat *patternSkip) match(ctx *context) error {
+	for i := 0; i < pat.n; i++ {
+		_, n := ctx.nextRune()
+		ctx.consume(n)
+
+		// no enough runes
+		if n == 0 {
+			return ctx.predicates(false)
+		}
+	}
+	return ctx.commit()
+}
+
+// Matches until pattern.
+func (pat *patternAnyRuneUntil) match(ctx *context) error {
+	for {
+		if ctx.reachedRepeatLimit(ctx.locals.i) {
+			return errorReachedRepeatLimit
+		}
+
+		if !ctx.justReturned() {
+			return ctx.call(pat.pat)
+		}
+
+		ret := ctx.ret
+		if ret.ok {
+			// pattern searched
+			if !pat.without {
+				ctx.consume(ret.n)
+			}
+			return ctx.commit()
+		}
+
+		_, n := ctx.nextRune()
+		ctx.consume(n)
+		ctx.locals.i++
+
+		// search failed
+		if n == 0 {
+			return ctx.predicates(false)
+		}
+	}
+}
+
 // Matches at least n times.
 func (pat *patternQualifierAtLeast) match(ctx *context) error {
 	for {
 		if ctx.reachedRepeatLimit(ctx.locals.i) {
-			return errorReachedLoopLimit
+			return errorReachedRepeatLimit
 		}
 
 		if !ctx.justReturned() {
@@ -267,7 +344,7 @@ func (pat *patternQualifierOptional) match(ctx *context) error {
 func (pat *patternQualifierRange) match(ctx *context) error {
 	for ctx.locals.i < pat.n {
 		if ctx.reachedRepeatLimit(ctx.locals.i) {
-			return errorReachedLoopLimit
+			return errorReachedRepeatLimit
 		}
 
 		if !ctx.justReturned() {
@@ -301,6 +378,17 @@ func (pat *patternAlternative) String() string {
 		strs[i] = fmt.Sprint(pat)
 	}
 	return fmt.Sprintf("(%s)", strings.Join(strs, " | "))
+}
+
+func (pat *patternSkip) String() string {
+	return fmt.Sprintf("#dot <%d>", pat.n)
+}
+
+func (pat *patternAnyRuneUntil) String() string {
+	if pat.without {
+		return fmt.Sprintf("until(%s)", pat.pat)
+	}
+	return fmt.Sprintf("until_end_of(%s)", pat.pat)
 }
 
 func (pat *patternQualifierAtLeast) String() string {

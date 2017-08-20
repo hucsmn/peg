@@ -10,7 +10,7 @@ var (
 	errorReferDisabled       = errorf("group text referring when grouping is disabled")
 	errorCornerCase          = errorf("this corner case should never be reached")
 	errorCallstackOverflow   = errorf("callstack overflow")
-	errorReachedLoopLimit    = errorf("loop limit is reached")
+	errorReachedRepeatLimit  = errorf("repeatition limit is reached")
 	errorExecuteWhenConsumed = errorf("unable to execute pattern when some text already consumed by caller")
 	errorNilConstructor      = errorf("capture constructor is nil")
 	errorNilMainPattern      = errorf("the main pattern is nil")
