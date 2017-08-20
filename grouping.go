@@ -42,68 +42,6 @@ func Trigger(hook func(string, Position) error, pat Pattern) Pattern {
 		trigger: hook}
 }
 
-// Save stores the text matched to given pointer.
-//
-// Note that, the action could be triggered when the inner pattern was matched
-// while the parent pattern is later proved to be dismatched.
-func Save(dst *string, pat Pattern) Pattern {
-	return &patternTrigger{
-		pat:     pat,
-		label:   fmt.Sprintf("save_%p", dst),
-		trigger: newSaveHook(dst),
-	}
-}
-
-func newSaveHook(dst *string) func(string, Position) error {
-	return func(span string, pos Position) error {
-		*dst = span
-		return nil
-	}
-}
-
-// Send sends the text matched to given channel.
-//
-// Note that, the action could be triggered when the inner pattern was matched
-// while the parent pattern is later proved to be dismatched.
-func Send(dst chan<- string, pat Pattern) Pattern {
-	return &patternTrigger{
-		pat:     pat,
-		label:   fmt.Sprintf("send_%v", dst),
-		trigger: newSendHook(dst),
-	}
-}
-
-func newSendHook(dst chan<- string) func(string, Position) error {
-	return func(span string, pos Position) error {
-		dst <- span
-		return nil
-	}
-}
-
-// SendToken wraps the text matched as a token, then sends it to the given
-// channel.
-//
-// Note that, the action could be triggered when the inner pattern was matched
-// while the parent pattern is later proved to be dismatched.
-func SendToken(dst chan<- Token, toktype int, pat Pattern) Pattern {
-	return &patternTrigger{
-		pat:     pat,
-		label:   fmt.Sprintf("send_%v", dst),
-		trigger: newSendTokenHook(dst, toktype),
-	}
-}
-
-func newSendTokenHook(dst chan<- Token, toktype int) func(string, Position) error {
-	return func(span string, pos Position) error {
-		dst <- Token{
-			Type:     toktype,
-			Value:    span,
-			Position: pos,
-		}
-		return nil
-	}
-}
-
 // Inject attaches an injector to given pattern which checks the matched text
 // after matched, then determines whether anything should be matched and
 // how many bytes to consume.

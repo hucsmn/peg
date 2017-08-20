@@ -85,9 +85,8 @@ Functionalities for groups, references, triggers and injectors:
 ```
 G(pat), NG(groupname, pat)
 Ref(groupname), RefB(groupname)
-Trigger(hook, pat), Save(pointer, pat),
-Send(channel, pat), SendToken(channel, tokentype, pat)
-Inject(injector, pat), Check(checker, pat), Trunc(maxrune, pat)
+Trigger(hook, pat), Inject(injector, pat)
+Check(checker, pat), Trunc(maxrune, pat)
 ```
 
 Functionalities for grammars and parsing captures:

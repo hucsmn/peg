@@ -242,5 +242,3 @@ func TestCustomedConstructor(t *testing.T) {
 		runPatternTestData(t, d)
 	}
 }
-
-// TODO: Tests Trigger, Save, Send, SendToken.
