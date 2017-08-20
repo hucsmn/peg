@@ -9,7 +9,8 @@ go:
  - release
 
 script:
- - go test -v ./...
+ - go test -v .
+ - go test -v ./pegutil
 
 notifications:
   email:
