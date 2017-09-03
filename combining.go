@@ -43,10 +43,14 @@ type (
 // when all of the patterns is successfully matched, the text is consumed in
 // order. It dismatches if any dismatched pattern is encountered.
 func Seq(sequence ...Pattern) Pattern {
-	if len(sequence) == 0 {
-		return &patternBoolean{true}
+	switch len(sequence) {
+	case 0:
+		return True
+	case 1:
+		return sequence[0]
+	default:
+		return &patternSequence{sequence}
 	}
-	return &patternSequence{sequence}
 }
 
 // Alt searches the first matched pattern in the given choices, theAlt itself
@@ -59,10 +63,14 @@ func Seq(sequence ...Pattern) Pattern {
 // Q1(R('0', '9'))) could match both "0.0" and "0", while Alt(Q1(R('0', '9')),
 // Seq(Q1(R('0', '9')), T("."), Q1(R('0', '9')))) could only match "0".
 func Alt(choices ...Pattern) Pattern {
-	if len(choices) == 0 {
-		return &patternBoolean{false}
+	switch len(choices) {
+	case 0:
+		return False
+	case 1:
+		return choices[0]
+	default:
+		return &patternAlternative{choices}
 	}
-	return &patternAlternative{choices}
 }
 
 // Skip matches exactly n runes.
@@ -99,11 +107,14 @@ func Q1(pat Pattern) Pattern {
 }
 
 // Qn matches the given pattern repeated at least n times.
-func Qn(least int, pat Pattern) Pattern {
-	if least < 0 {
-		return False
+//
+// The paramenter n is required to be non-negative,
+// or the negative value would be treated as zero.
+func Qn(n int, pat Pattern) Pattern {
+	if n < 0 {
+		n = 0
 	}
-	return &patternQualifierAtLeast{n: least, pat: pat}
+	return &patternQualifierAtLeast{n: n, pat: pat}
 }
 
 // Q01 matches the given pattern optionally.
@@ -112,11 +123,11 @@ func Q01(pat Pattern) Pattern {
 }
 
 // Q0n matches the given pattern repeated at most n times.
+//
+// The paramenter n is required to be non-negative,
+// or the negative value would be treated as zero.
 func Q0n(n int, pat Pattern) Pattern {
-	if n < 0 {
-		return False
-	}
-	if n == 0 {
+	if n <= 0 {
 		return True
 	}
 	if n == 1 {
@@ -126,11 +137,11 @@ func Q0n(n int, pat Pattern) Pattern {
 }
 
 // Qnn matches the given pattern repeated exactly n times.
+//
+// The paramenter n is required to be non-negative,
+// or the negative value would be treated as zero.
 func Qnn(n int, pat Pattern) Pattern {
-	if n < 0 {
-		return False
-	}
-	if n == 0 {
+	if n <= 0 {
 		return True
 	}
 	if n == 1 {
@@ -140,25 +151,27 @@ func Qnn(n int, pat Pattern) Pattern {
 }
 
 // Qmn matches the given pattern repeated from m to n times.
+//
+// The paramenter m and n are required to be non-negative,
+// or the negative value would be treated as zero.
 func Qmn(m, n int, pat Pattern) Pattern {
+	if n < 0 {
+		n = 0
+	}
+	if m < 0 {
+		m = 0
+	}
 	if m > n {
 		m, n = n, m
 	}
 
-	switch {
-	case n < 0:
-		return False
-	case n == 0:
+	if n == 0 {
 		return True
-	case m < 0:
-		m = 0
-		fallthrough
-	default:
-		if m == 0 && n == 1 {
-			return &patternQualifierOptional{pat}
-		}
-		return &patternQualifierRange{m: m, n: n, pat: pat}
 	}
+	if m == 0 && n == 1 {
+		return &patternQualifierOptional{pat}
+	}
+	return &patternQualifierRange{m: m, n: n, pat: pat}
 }
 
 // J0 matches zero or more items separated by sep.
