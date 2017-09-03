@@ -68,7 +68,7 @@ When(cond, pat), If(cond, yes, no), Switch(cond, pat, ..., [otherwise])
 Available pattern qualifiers and repeatitions are:
 
 ```
-Skip(n), Until(pat), UntilEndOf(pat)
+Skip(n), Until(pat), UntilB(pat)
 Q0(pat), Q1(pat), Qn(atleast, pat)
 Q01(pat), Q0n(atmost, pat), Qnn(exact, pat), Qmn(from, to, pat)
 ```

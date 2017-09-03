@@ -314,7 +314,7 @@ func TestPredicators(t *testing.T) {
 	}
 }
 
-// Tests Count, Until, UntilEndOf, Q0, Q1, Qn, Q01, Qnn, Qmn, J0, Jn, Jnn, Jmn.
+// Tests Count, Until, UntilB, Q0, Q1, Qn, Q01, Qnn, Qmn, J0, Jn, Jnn, Jmn.
 func TestQualifierAndJoin(t *testing.T) {
 	data := []patternTestData{
 		{"", false, 0, false, ``, ``, Skip(2)},
@@ -331,14 +331,14 @@ func TestQualifierAndJoin(t *testing.T) {
 		{"AA.", true, 2, false, ``, ``, Until(T("."))},
 		{"AA.B", true, 2, false, ``, ``, Until(T("."))},
 
-		{"", false, 0, false, ``, ``, UntilEndOf(T("."))},
-		{"A", false, 0, false, ``, ``, UntilEndOf(T("."))},
-		{".", true, 1, false, ``, ``, UntilEndOf(T("."))},
-		{".B", true, 1, false, ``, ``, UntilEndOf(T("."))},
-		{"A.", true, 2, false, ``, ``, UntilEndOf(T("."))},
-		{"A.B", true, 2, false, ``, ``, UntilEndOf(T("."))},
-		{"AA.", true, 3, false, ``, ``, UntilEndOf(T("."))},
-		{"AA.B", true, 3, false, ``, ``, UntilEndOf(T("."))},
+		{"", false, 0, false, ``, ``, UntilB(T("."))},
+		{"A", false, 0, false, ``, ``, UntilB(T("."))},
+		{".", true, 1, false, ``, ``, UntilB(T("."))},
+		{".B", true, 1, false, ``, ``, UntilB(T("."))},
+		{"A.", true, 2, false, ``, ``, UntilB(T("."))},
+		{"A.B", true, 2, false, ``, ``, UntilB(T("."))},
+		{"AA.", true, 3, false, ``, ``, UntilB(T("."))},
+		{"AA.B", true, 3, false, ``, ``, UntilB(T("."))},
 
 		{"", true, 0, false, ``, ``, Q0(T("A"))},
 		{"A", true, 1, false, ``, ``, Q0(T("A"))},

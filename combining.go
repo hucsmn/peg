@@ -90,9 +90,9 @@ func Until(pat Pattern) Pattern {
 	return &patternAnyRuneUntil{without: true, pat: pat}
 }
 
-// UntilEndOf matches any rune until the end of text piece
+// UntilB matches any rune until the end of text piece
 // searched by given pattern.
-func UntilEndOf(pat Pattern) Pattern {
+func UntilB(pat Pattern) Pattern {
 	return &patternAnyRuneUntil{without: false, pat: pat}
 }
 
