@@ -22,8 +22,8 @@ var (
 	rpnOptinalSpaces = peg.Q0(peg.U("White_Space"))
 	rpnNewline       = peg.Alt(peg.T("\r\n"), peg.S("\r\n"))
 	rpnComment       = peg.Alt(
-		peg.Seq(peg.T("#"), peg.UntilEndOf(rpnNewline)),
-		peg.Seq(peg.T("("), peg.UntilEndOf(peg.T(")"))))
+		peg.Seq(peg.T("#"), peg.UntilB(rpnNewline)),
+		peg.Seq(peg.T("("), peg.UntilB(peg.T(")"))))
 	rpnVerb   = peg.Q1(peg.U("-White_Space"))
 	rpnNumber = peg.Alt(
 		peg.Seq(peg.TI("0x"), peg.Q1(peg.R('0', '9', 'a', 'f', 'A', 'F'))),
