@@ -61,14 +61,20 @@ func TestGroupInjectAndRefer(t *testing.T) {
 		{"ABC", true, 3, false, `"cap"="C"`, ``, Q0(NG("cap", S("ABC")))}, // overwrites
 		{"+1.e-2", true, 6, false, `"num"="+1.e-2"`, ``, NG("num", patFloating)},
 
+		{"", false, 0, false, ``, ``, Check(nil, Dot)},
+		{"0", true, 1, false, ``, ``, Check(nil, Dot)},
 		{"0", true, 1, false, ``, ``, Check(func(s string) bool { return s == "0" }, Dot)},
 		{"1", false, 0, false, ``, ``, Check(func(s string) bool { return s == "0" }, Dot)},
+
 		{"", true, 0, false, ``, ``, Trunc(2, Q0(Dot))},
 		{"A", true, 1, false, ``, ``, Trunc(2, Q0(Dot))},
 		{"AA", true, 2, false, ``, ``, Trunc(2, Q0(Dot))},
 		{"AAA", true, 2, false, ``, ``, Trunc(2, Q0(Dot))},
 		{"AAA", true, 0, false, ``, ``, Trunc(0, Q0(Dot))},
 		{"AAA", false, 0, false, ``, ``, Trunc(-1, Q0(Dot))},
+
+		{"", false, 0, false, ``, ``, Inject(nil, Dot)},
+		{"0", true, 1, false, ``, ``, Inject(nil, Dot)},
 		{"0246", true, 1, false, ``, ``, Inject(zeroes, Seq(Dot, Dot, Dot, Dot))},
 		{"0046", true, 2, false, ``, ``, Inject(zeroes, Seq(Dot, Dot, Dot, Dot))},
 		{"1246", false, 0, false, ``, ``, Inject(zeroes, Seq(Dot, Dot, Dot, Dot))},

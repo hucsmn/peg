@@ -117,8 +117,8 @@ func If(cond, yes, no Pattern) Pattern {
 }
 
 // Switch tests cond-then pairs in order, executes then-branch if cond is true.
-// If there is no true cond, executes the optional otherwise-branch,
-// or just predicates false if there is no otherwise-branch.
+// If there is no true cond, executes the optional otherwise-branch
+// (the default pattern is True).
 //
 // Note that, if cond predicates true, groups/parse captures won't be
 // discarded.
@@ -133,7 +133,7 @@ func Switch(cond, then Pattern, rest ...Pattern) Pattern {
 		pat.otherwise = rest[len(rest)-1]
 		rest = rest[:len(rest)-1]
 	} else {
-		pat.otherwise = False
+		pat.otherwise = True
 	}
 
 	for len(rest) > 0 {

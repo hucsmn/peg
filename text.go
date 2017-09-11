@@ -43,10 +43,6 @@ func T(text string) Pattern {
 
 // TI matches given text case-insensitively.
 func TI(text string) Pattern {
-	if len(text) == 0 {
-		return True
-	}
-
 	// split text into pieces that satisfies couldSafelyFoldCase(piece).
 	// build Seq(TI(safe), S("unsafe"))
 	var pats []Pattern

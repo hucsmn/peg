@@ -76,7 +76,7 @@ func Alt(choices ...Pattern) Pattern {
 // Skip matches exactly n runes.
 func Skip(n int) Pattern {
 	if n < 0 {
-		return False
+		n = 0
 	}
 	if n == 0 {
 		return True
@@ -300,7 +300,11 @@ func J1(item, sep Pattern) Pattern {
 
 // Jn matches at least n items separated by sep.
 func Jn(n int, item, sep Pattern) Pattern {
-	if n <= 0 {
+	if n < 0 {
+		n = 0
+	}
+
+	if n == 0 {
 		return Alt(
 			Seq(item, Q0(Seq(sep, item))),
 			True)
@@ -310,17 +314,23 @@ func Jn(n int, item, sep Pattern) Pattern {
 
 // J0n matches at most n items separated by sep.
 func J0n(n int, item, sep Pattern) Pattern {
+	if n < 0 {
+		n = 0
+	}
+
 	return Jmn(0, n, item, sep)
 }
 
 // Jnn matches exactly n items separated by sep.
 func Jnn(n int, item, sep Pattern) Pattern {
-	switch {
-	case n < 0:
-		return False
-	case n == 0:
+	if n < 0 {
+		n = 0
+	}
+
+	switch n {
+	case 0:
 		return True
-	case n == 1:
+	case 1:
 		return item
 	default:
 		return Seq(item, Qnn(n-1, Seq(sep, item)))
@@ -329,16 +339,20 @@ func Jnn(n int, item, sep Pattern) Pattern {
 
 // Jmn matches m to n items separated by sep.
 func Jmn(m, n int, item, sep Pattern) Pattern {
+	if m < 0 {
+		m = 0
+	}
+	if n < 0 {
+		n = 0
+	}
 	if m > n {
 		m, n = n, m
 	}
 
 	switch {
-	case n < 0:
-		return False
 	case n == 0:
-		return item
-	case m <= 0:
+		return True
+	case m == 0:
 		return Alt(
 			Seq(item, Qmn(0, n-1, Seq(sep, item))),
 			True)
