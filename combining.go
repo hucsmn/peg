@@ -96,65 +96,162 @@ func UntilB(pat Pattern) Pattern {
 	return &patternAnyRuneUntil{without: false, pat: pat}
 }
 
-// Q0 matches the given pattern repeated zero or more times.
-func Q0(pat Pattern) Pattern {
+// Q0 matches any of the given choices repeated zero or more times.
+func Q0(choices ...Pattern) Pattern {
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Q0(False) <=> True
+		return True
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
 	return &patternQualifierAtLeast{n: 0, pat: pat}
 }
 
-// Q1 matches the given pattern repeated at least one time.
-func Q1(pat Pattern) Pattern {
+// Q1 matches any of the given choices repeated one or more times.
+func Q1(choices ...Pattern) Pattern {
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Q1(False) <=> False
+		return False
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
 	return &patternQualifierAtLeast{n: 1, pat: pat}
 }
 
-// Qn matches the given pattern repeated at least n times.
+// Qn matches any of the given choices repeated at least n times.
 //
 // The paramenter n is required to be non-negative,
 // or the negative value would be treated as zero.
-func Qn(n int, pat Pattern) Pattern {
+func Qn(n int, choices ...Pattern) Pattern {
 	if n < 0 {
 		n = 0
 	}
+
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Qn(n = 0, False) <=> True
+		// Qn(n > 0, False) <=> False
+		if n == 0 {
+			return True
+		}
+		return False
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
 	return &patternQualifierAtLeast{n: n, pat: pat}
 }
 
-// Q01 matches the given pattern optionally.
-func Q01(pat Pattern) Pattern {
+// Q01 matches any of the given choices zero to one time.
+func Q01(choices ...Pattern) Pattern {
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Q01(False) <=> True
+		return True
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
 	return &patternQualifierOptional{pat}
 }
 
-// Q0n matches the given pattern repeated at most n times.
+// Q0n matches any of the given choices repeated at most n times.
 //
 // The paramenter n is required to be non-negative,
 // or the negative value would be treated as zero.
-func Q0n(n int, pat Pattern) Pattern {
-	if n <= 0 {
-		return True
+func Q0n(n int, choices ...Pattern) Pattern {
+	if n < 0 {
+		n = 0
 	}
-	if n == 1 {
+
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Q0n(n, False) <=> True
+		return True
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
+	switch n {
+	case 0:
+		return True
+	case 1:
 		return &patternQualifierOptional{pat}
+	default:
+		return &patternQualifierRange{m: 0, n: n, pat: pat}
 	}
-	return &patternQualifierRange{m: 0, n: n, pat: pat}
 }
 
-// Qnn matches the given pattern repeated exactly n times.
+// Qnn matches any of the given choices repeated exactly n times.
 //
 // The paramenter n is required to be non-negative,
 // or the negative value would be treated as zero.
-func Qnn(n int, pat Pattern) Pattern {
-	if n <= 0 {
+func Qnn(n int, choices ...Pattern) Pattern {
+	if n < 0 {
+		n = 0
+	}
+
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Qnn(n = 0, False) <=> True
+		// Qnn(n > 0, False) <=> False
+		if n == 0 {
+			return True
+		}
+		return False
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
+	}
+
+	switch n {
+	case 0:
 		return True
-	}
-	if n == 1 {
+	case 1:
 		return pat
+	default:
+		return &patternQualifierRange{m: n, n: n, pat: pat}
 	}
-	return &patternQualifierRange{m: n, n: n, pat: pat}
 }
 
-// Qmn matches the given pattern repeated from m to n times.
+// Qmn matches any of the given choices repeated from m to n times.
 //
 // The paramenter m and n are required to be non-negative,
 // or the negative value would be treated as zero.
-func Qmn(m, n int, pat Pattern) Pattern {
+func Qmn(m, n int, choices ...Pattern) Pattern {
 	if n < 0 {
 		n = 0
 	}
@@ -163,6 +260,23 @@ func Qmn(m, n int, pat Pattern) Pattern {
 	}
 	if m > n {
 		m, n = n, m
+	}
+
+	var pat Pattern
+
+	switch len(choices) {
+	case 0:
+		// Alt() <=> False
+		// Qmn(m = 0, n, False) <=> True
+		// Qmn(m > 0, n, False) <=> False
+		if m == 0 {
+			return True
+		}
+		return False
+	case 1:
+		pat = choices[0]
+	default:
+		pat = Alt(choices...)
 	}
 
 	if n == 0 {
