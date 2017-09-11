@@ -46,19 +46,19 @@
 //
 // Patterns are combined by sequence or alternation:
 //
-//     Seq(pat, ...), Alt(pat, ...)
+//     Seq(sequence...), Alt(choices...)
 //
 // Predicators test if pattern would be matched, but consume no text:
 //
 //     True, False, SOL, EOL, EOF
-//     B(text), Test(pat), Not(pat), And(pat...), Or(pat...)
+//     B(text), Test(cond), Not(cond), And(assertions...), Or(posiblities...)
 //     When(cond, pat), If(cond, yes, no), Switch(cond, pat, ..., [otherwise])
 //
 // Available pattern qualifiers are:
 //
 //     Skip(n), Until(pat), UntilB(pat)
-//     Q0(pat), Q1(pat), Qn(atleast, pat)
-//     Q01(pat), Q0n(atmost, pat), Qnn(exact, pat), Qmn(from, to, pat)
+//     Q0(choices...), Q1(choices...), Qn(atleast, choices...)
+//     Q01(choices...), Q0n(atmost, choices...), Qnn(exact, choices...), Qmn(from, to, choices...)
 //
 // Pattern where item separated by sep could be expressed using:
 //
