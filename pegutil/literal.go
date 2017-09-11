@@ -54,7 +54,7 @@ var (
 	// Identifer.
 	Identifier = peg.Seq(
 		peg.Alt(Letter, peg.T("_")),
-		peg.Q0(peg.Alt(LetterDigit, peg.T("_"))))
+		peg.Q0(LetterDigit, peg.T("_")))
 
 	// Spaces and newlines.
 	AnySpaces = peg.Q0(Whitespace)
@@ -64,13 +64,13 @@ var (
 	// Quoted string.
 	String = peg.Seq(
 		peg.T(`"`),
-		peg.Q0(peg.Alt(
+		peg.Q0(
 			peg.Seq(peg.T(`\U`), peg.Qnn(8, HexDigit)),
 			peg.Seq(peg.T(`\u`), peg.Qnn(4, HexDigit)),
 			peg.Seq(peg.T(`\x`), peg.Qnn(2, HexDigit)),
 			peg.Seq(peg.T(`\`), peg.Qnn(3, OctDigit)),
 			peg.Seq(peg.T(`\`), peg.S(`abfnrtv\'"`)),
-			peg.NS("\"\n\r"))),
+			peg.NS("\"\n\r")),
 		peg.T(`"`))
 )
 

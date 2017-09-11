@@ -32,7 +32,7 @@ var (
 			peg.Q1(peg.R('0', '9')))))
 	sexpSymbol = peg.Seq(
 		peg.Alt(peg.R('a', 'z', 'A', 'Z'), peg.S("!$%&*+,-./:;<=>?@[\\]^_`{|}~")),
-		peg.Q0(peg.Alt(peg.R('a', 'z', 'A', 'Z', '0', '9'), peg.S("!$%&*+,-./:;<=>?@[\\]^_`{|}~"))))
+		peg.Q0(peg.R('a', 'z', 'A', 'Z', '0', '9'), peg.S("!$%&*+,-./:;<=>?@[\\]^_`{|}~")))
 	sexpQuote = peg.T("'")
 	sexpLeft  = peg.T("(")
 	sexpSep   = peg.Q1(peg.S(" \t\n\r\v\f"))

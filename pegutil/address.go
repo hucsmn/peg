@@ -173,7 +173,7 @@ var (
 	emailLocalRune   = peg.Alt(ASCIILetterDigit, peg.S("!#$%&'*+/=?^_`{|}~-"))
 	emailLocalQuoted = peg.Seq(
 		peg.T(`"`),
-		peg.Q0(peg.Alt(
+		peg.Q0(
 			peg.Seq(peg.T(`\`),
 				peg.R(
 					'\x01', '\x09',
@@ -185,7 +185,7 @@ var (
 				'\x0e', '\x1f',
 				'\x20', '\x21',
 				'\x23', '\x5b',
-				'\x5d', '\x7f'))),
+				'\x5d', '\x7f')),
 		peg.T(`"`))
 	emailDomainData = peg.Seq(
 		peg.T(`[`),
@@ -194,7 +194,7 @@ var (
 				peg.Q0(peg.Seq(peg.Alt(ASCIILetterDigit, peg.T("-")), peg.Not(peg.T(":")))),
 				ASCIILetterDigit,
 				peg.T(":"),
-				peg.Q1(peg.Alt(
+				peg.Q1(
 					peg.R(
 						'\x01', '\x08',
 						'\x0b', '\x0c',
@@ -205,7 +205,7 @@ var (
 						peg.R(
 							'\x01', '\x09',
 							'\x0b', '\x0c',
-							'\x0e', '\x7f'))))),
+							'\x0e', '\x7f')))),
 			IPv4),
 		peg.T(`]`))
 
@@ -217,7 +217,7 @@ var (
 		peg.NG("domain", peg.Trunc(255, peg.Alt(
 			emailDomainData,
 			peg.Seq(
-				peg.J1(peg.Q1(peg.Alt(ASCIILetterDigit, peg.T("-"))), peg.T(".")),
+				peg.J1(peg.Q1(ASCIILetterDigit, peg.T("-")), peg.T(".")),
 				peg.Q01(peg.T(".")))))))
 )
 
