@@ -248,3 +248,28 @@ func TestCustomedConstructor(t *testing.T) {
 		runPatternTestData(t, d)
 	}
 }
+
+// Test Trigger.
+func TestTrigger(t *testing.T) {
+	storing := func(pat Pattern) func(ctx *sideEffectsTestContext) Pattern {
+		return func(ctx *sideEffectsTestContext) Pattern {
+			return Trigger(func(s string, pos Position) error {
+				ctx.store(s)
+				return nil
+			}, pat)
+		}
+	}
+
+	data := []sideEffectsTestData{
+		{"", false, 0, false, "{}", storing(False)},
+		{"", true, 0, false, "{''}", storing(True)},
+		{"", false, 0, false, "{}", storing(T("A"))},
+		{"A", true, 1, false, "{'A'}", storing(T("A"))},
+		{"B", false, 0, false, "{}", storing(T("A"))},
+	}
+
+	ctx := newSideEffectsTestContext()
+	for _, d := range data {
+		runSideEffectsTestData(t, ctx, d)
+	}
+}

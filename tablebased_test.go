@@ -6,8 +6,10 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
+// Test pattern match results, errors, groups and captures.
 type patternTestData struct {
 	text   string
 	ok     bool
@@ -122,4 +124,106 @@ func formatCap(cap Capture) string {
 		return fmt.Sprintf("%s(%s)", v.Name, formatCapList(v.Subs))
 	}
 	return fmt.Sprintf("%v", cap)
+}
+
+// Test pattern match side effects.
+type (
+	sideEffectsTestContext struct {
+		states []string
+	}
+
+	sideEffectsTestData struct {
+		text string
+		ok   bool
+		n    int
+		fail bool
+
+		state   string
+		metapat func(*sideEffectsTestContext) Pattern
+	}
+)
+
+func runSideEffectsTestData(t *testing.T, ctx *sideEffectsTestContext, data sideEffectsTestData) {
+	ctx.clear()
+	pat := data.metapat(ctx)
+	r, err := Match(pat, data.text)
+	if err != nil {
+		if data.fail {
+			t.Logf("INFO: the expected failure `%s` occurs when match(%s, %q)", err, pat, data.text)
+		} else {
+			t.Errorf("UNEXPECTED ERROR `%s` occurs when match(%s, %q)", err, pat, data.text)
+		}
+		return
+	} else if data.fail {
+		t.Errorf("EXPECTED BUT NO ERROR occurs when match(%s, %q)", pat, data.text)
+		return
+	}
+
+	if r.Ok != data.ok {
+		t.Errorf("RESULT DISMATCH: match(%s, %q) => (%v != %v, %d)",
+			pat, data.text, r.Ok, data.ok, r.N)
+		return
+	}
+	if data.ok && r.N != data.n {
+		t.Errorf("RESULT DISMATCH: match(%s, %q) => (%v, %d != %d)",
+			pat, data.text, r.Ok, r.N, data.n)
+		return
+	}
+
+	state := ctx.format()
+	if state != data.state {
+		t.Errorf("SIDE EFFECTS DISMATCH: match(%s, %q) => %q != %q",
+			pat, data.text, state, data.state)
+		return
+	}
+}
+
+func newSideEffectsTestContext() *sideEffectsTestContext {
+	return &sideEffectsTestContext{}
+}
+
+func (ctx *sideEffectsTestContext) clear() {
+	if ctx.states != nil {
+		ctx.states = ctx.states[:0]
+	}
+}
+
+func (ctx *sideEffectsTestContext) store(value string) {
+	ctx.states = append(ctx.states, value)
+}
+
+func (ctx *sideEffectsTestContext) format() string {
+	strs := make([]string, len(ctx.states))
+	for i := range ctx.states {
+		strs[i] = quoteState(ctx.states[i])
+	}
+	return "{" + strings.Join(strs, ", ") + "}"
+}
+
+func quoteState(s string) string {
+	const (
+		specials = ",{} \\'"
+		noescape = ",{} "
+	)
+
+	lit := ""
+	for {
+		i := strings.IndexAny(s, specials)
+
+		if i < 0 {
+			lit += s
+			break
+		}
+
+		lit += s[:i]
+		s = s[i:]
+		r, n := utf8.DecodeRuneInString(s)
+		if strings.ContainsRune(noescape, r) {
+			lit += s[:n]
+		} else {
+			lit += "\\" + s[:n]
+		}
+		s = s[n:]
+	}
+	return "'" + lit + "'"
 }
