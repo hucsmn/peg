@@ -100,9 +100,9 @@ func (ctx *context) match() error {
 		//   1) return ctx.call(callee)
 		//      or return ctx.execute(callee)
 		//   2) return ctx.returns(ret)
-		//      or return ctx.returnsPredication(ok)
-		//      or return ctx.returnsMatched()
-		//   3) return any_error
+		//      or return ctx.commit()
+		//      or return ctx.predicates(ok)
+		//   3) return anyError
 		err := ctx.pat.match(ctx)
 		if err != nil {
 			return err
