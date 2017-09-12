@@ -28,6 +28,10 @@ type (
 		ok bool
 	}
 
+	patternAbort struct {
+		msg string
+	}
+
 	patternLineAnchorPredicate struct {
 		linestart bool
 	}
@@ -96,6 +100,11 @@ func Or(pats ...Pattern) Pattern {
 		return False
 	}
 	return &patternOrPredicate{pats}
+}
+
+// Abort quit the normal matching process, reporting an error message.
+func Abort(msg string) Pattern {
+	return &patternAbort{msg}
 }
 
 // When tests the given condition but consumes no text, then determines to
@@ -220,6 +229,12 @@ func (pat *patternOrPredicate) match(ctx *context) error {
 	return ctx.predicates(false)
 }
 
+// Abort directly.
+func (pat *patternAbort) match(ctx *context) error {
+	pos := ctx.tell()
+	return errorf("abort:%s: %s", pos.String(), pat.msg)
+}
+
 // Branch `if'.
 func (pat *patternIf) match(ctx *context) error {
 	if !ctx.justReturned() {
@@ -286,6 +301,10 @@ func (pat *patternOrPredicate) String() string {
 		strs[i] = fmt.Sprint(pat)
 	}
 	return fmt.Sprintf("(%s)", strings.Join(strs, " || "))
+}
+
+func (pat *patternAbort) String() string {
+	return fmt.Sprintf("abort(%q)", pat.msg)
 }
 
 func (pat *patternIf) String() string {

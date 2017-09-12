@@ -210,6 +210,10 @@ func TestPredicators(t *testing.T) {
 		{"1b", true, 2, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
 		{"2c", true, 2, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
 		{"2a", false, 0, false, ``, ``, Seq(Dot, Switch(B("0"), T("a"), B("1"), T("b"), T("c")))},
+
+		{"", false, 0, true, ``, ``, Abort("panic")},
+		{"text", false, 0, true, ``, ``, If(T("^"), Q0(Dot), Abort("text do not starts with '^'"))},
+		{"^text", true, 5, false, ``, ``, If(T("^"), Q0(Dot), Abort("text do not starts with '^'"))},
 	}
 
 	for _, d := range data {

@@ -61,7 +61,7 @@ Predicators test if pattern would be matched, but consume no text:
 
 ```
 True, False, SOL, EOL, EOF
-B(text), Test(cond), Not(cond), And(assertions...), Or(posiblities...)
+B(text), Test(cond), Not(cond), And(assertions...), Or(posiblities...), Abort(msg)
 When(cond, pat), If(cond, yes, no), Switch(cond, pat, ..., [otherwise])
 ```
 
