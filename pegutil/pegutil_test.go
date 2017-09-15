@@ -30,9 +30,14 @@ func TestLiteralFullMatch(t *testing.T) {
 		{"0", true, DecInteger},
 		{"18446744073709551616", true, DecInteger}, // 1<<64
 		{"18446744073709551616", false, DecUint64}, // 1<<64
-		{"0", true, SimpleHexUint8},
-		{"0f", true, SimpleHexUint8},
-		{"0ff", false, SimpleHexUint8},
+
+		// Hexadecimal digit sequences.
+		{"0", false, HexDigits8},
+		{"0f", true, HexDigits8},
+		{"0ff", false, HexDigits8},
+		{"0", true, VaryHexDigits8},
+		{"0f", true, VaryHexDigits8},
+		{"0ff", false, VaryHexDigits8},
 
 		// Integer.
 		{"0123", true, Integer},

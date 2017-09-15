@@ -30,12 +30,12 @@ var (
 		// (e.g. ::192.168.0.1).
 		peg.Inject(ipv6EllipsisIPv4,
 			peg.Seq(
-				peg.Jmn(0, 5, SimpleHexUint16, peg.T(":")),
+				peg.Jmn(0, 5, VaryHexDigits16, peg.T(":")),
 				peg.T("::"),
 				peg.Alt(
 					peg.Seq(
 						peg.Jmn(1, 5,
-							peg.Seq(SimpleHexUint16, peg.Not(peg.T("."))), // avoid matches ipv4 part
+							peg.Seq(VaryHexDigits16, peg.Not(peg.T("."))), // avoid matches ipv4 part
 							peg.T(":")),
 						peg.Seq(peg.T(":"), ipaddrIPv4)),
 					ipaddrIPv4))),
@@ -43,15 +43,15 @@ var (
 		// (e.g. ::1, ::, ffff::, ffff::1).
 		peg.Inject(ipv6EllipsisNoIPv4,
 			peg.Seq(
-				peg.Jmn(0, 7, SimpleHexUint16, peg.T(":")),
+				peg.Jmn(0, 7, VaryHexDigits16, peg.T(":")),
 				peg.T("::"),
-				peg.Jmn(0, 7, SimpleHexUint16, peg.T(":")))),
+				peg.Jmn(0, 7, VaryHexDigits16, peg.T(":")))),
 		// 8 uint16 groups (e.g. ffff:0:0:0:0:0:0:0).
 		peg.Jnn(8, HexUint16, peg.T(":")),
 		// 6 uint16 groups with trailing 32-bit dot-decimals
 		// (e.g. ffff:0:0:0:0:0:192.168.0.1).
 		peg.Seq(
-			peg.Jnn(6, SimpleHexUint16, peg.T(":")),
+			peg.Jnn(6, VaryHexDigits16, peg.T(":")),
 			peg.Seq(peg.T(":"), ipaddrIPv4)))
 	ipaddrIP = peg.Alt(ipaddrIPv6, ipaddrIPv4)
 

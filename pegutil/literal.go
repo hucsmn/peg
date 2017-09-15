@@ -43,17 +43,39 @@ var (
 	OctUint64  = octUint64
 )
 
-// Simplified bare integer.
+// Hexadecimal digit sequences.
 var (
-	simpleHexUint8  = peg.Qmn(1, 2, HexDigit)
-	simpleHexUint16 = peg.Qmn(1, 4, HexDigit)
-	simpleHexUint32 = peg.Qmn(1, 8, HexDigit)
-	simpleHexUint64 = peg.Qmn(1, 16, HexDigit)
+	literalHexDigits8   = peg.Qnn(2, HexDigit)
+	literalHexDigits16  = peg.Qnn(4, HexDigit)
+	literalHexDigits32  = peg.Qnn(8, HexDigit)
+	literalHexDigits64  = peg.Qnn(16, HexDigit)
+	literalHexDigits128 = peg.Qnn(32, HexDigit)
+	literalHexDigits256 = peg.Qnn(64, HexDigit)
+	literalHexDigits512 = peg.Qnn(128, HexDigit)
 
-	SimpleHexUint8  = simpleHexUint8
-	SimpleHexUint16 = simpleHexUint16
-	SimpleHexUint32 = simpleHexUint32
-	SimpleHexUint64 = simpleHexUint64
+	literalVaryHexDigits8   = peg.Qmn(1, 2, HexDigit)
+	literalVaryHexDigits16  = peg.Qmn(1, 4, HexDigit)
+	literalVaryHexDigits32  = peg.Qmn(1, 8, HexDigit)
+	literalVaryHexDigits64  = peg.Qmn(1, 16, HexDigit)
+	literalVaryHexDigits128 = peg.Qmn(1, 32, HexDigit)
+	literalVaryHexDigits256 = peg.Qmn(1, 64, HexDigit)
+	literalVaryHexDigits512 = peg.Qmn(1, 128, HexDigit)
+
+	HexDigits8   = literalHexDigits8
+	HexDigits16  = literalHexDigits16
+	HexDigits32  = literalHexDigits32
+	HexDigits64  = literalHexDigits64
+	HexDigits128 = literalHexDigits128
+	HexDigits256 = literalHexDigits256
+	HexDigits512 = literalHexDigits512
+
+	VaryHexDigits8   = literalVaryHexDigits8
+	VaryHexDigits16  = literalVaryHexDigits16
+	VaryHexDigits32  = literalVaryHexDigits32
+	VaryHexDigits64  = literalVaryHexDigits64
+	VaryHexDigits128 = literalVaryHexDigits128
+	VaryHexDigits256 = literalVaryHexDigits256
+	VaryHexDigits512 = literalVaryHexDigits512
 )
 
 // Numbers.
