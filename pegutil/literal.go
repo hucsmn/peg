@@ -194,7 +194,9 @@ func newIntegerInjector(m, n uint64) func(s string) (int, bool) {
 
 func newBareIntegerInjector(m, n uint64, base int) func(s string) (int, bool) {
 	if m > n {
-		m, n = n, m
+		return func(s string) (int, bool) {
+			return 0, false
+		}
 	}
 	dm := countDigits(m, base)
 	dn := countDigits(n, base)
