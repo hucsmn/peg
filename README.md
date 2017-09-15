@@ -2,6 +2,7 @@
 
 [![Go Doc](https://godoc.org/github.com/hucsmn/peg?status.png)](https://godoc.org/github.com/hucsmn/peg)
 [![Build Status](https://travis-ci.org/hucsmn/peg.svg?branch=master)](https://travis-ci.org/hucsmn/peg)
+[![Coverage Status](https://coveralls.io/repos/github/hucsmn/peg/badge.svg)](https://coveralls.io/github/hucsmn/peg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hucsmn/peg)](https://goreportcard.com/report/github.com/hucsmn/peg)
 
 This package implements the Parsing Expression Grammars (PEGs),
