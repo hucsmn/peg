@@ -8,29 +8,24 @@ import (
 
 // Hardware addresses.
 var (
-	// 48-bit hardware address (i.e. EUI-48).
-	MAC = peg.Alt(
+	hwaddrMAC = peg.Alt(
 		peg.Jnn(6, peg.Qnn(2, HexDigit), peg.T(":")),
 		peg.Jnn(6, peg.Qnn(2, HexDigit), peg.T("-")),
 		peg.Jnn(3, peg.Qnn(4, HexDigit), peg.T(".")))
-
-	// 64-bit hardware address.
-	EUI64 = peg.Alt(
+	hwaddrEUI64 = peg.Alt(
 		peg.Jnn(8, peg.Qnn(2, HexDigit), peg.T(":")),
 		peg.Jnn(8, peg.Qnn(2, HexDigit), peg.T("-")),
 		peg.Jnn(4, peg.Qnn(4, HexDigit), peg.T(".")))
+
+	// Hardware addresses (EUI-48 and EUI-64).
+	MAC   = hwaddrMAC
+	EUI64 = hwaddrEUI64
 )
 
 // IP addresses.
 var (
-	// IPv4 dot-decimal address.
-	IPv4 = peg.Jnn(4, NoRedundantZeroes(DecUint8), peg.T("."))
-
-	// IPv4 address with subnetwork mask.
-	CIDRv4 = peg.Seq(IPv4, peg.T("/"), DecIntegerBetween(0, 32))
-
-	// IPv6 address.
-	IPv6 = peg.Alt(
+	ipaddrIPv4 = peg.Jnn(4, NoRedundantZeroes(DecUint8), peg.T("."))
+	ipaddrIPv6 = peg.Alt(
 		// ellipsis with trailing 32-bit dot-decimals
 		// (e.g. ::192.168.0.1).
 		peg.Inject(ipv6EllipsisIPv4,
@@ -42,8 +37,8 @@ var (
 						peg.Jmn(1, 5,
 							peg.Seq(SimpleHexUint16, peg.Not(peg.T("."))), // avoid matches ipv4 part
 							peg.T(":")),
-						peg.Seq(peg.T(":"), IPv4)),
-					IPv4))),
+						peg.Seq(peg.T(":"), ipaddrIPv4)),
+					ipaddrIPv4))),
 		// ellipsis without trailing 32-bit dot-decimals
 		// (e.g. ::1, ::, ffff::, ffff::1).
 		peg.Inject(ipv6EllipsisNoIPv4,
@@ -57,24 +52,32 @@ var (
 		// (e.g. ffff:0:0:0:0:0:192.168.0.1).
 		peg.Seq(
 			peg.Jnn(6, SimpleHexUint16, peg.T(":")),
-			peg.Seq(peg.T(":"), IPv4)))
+			peg.Seq(peg.T(":"), ipaddrIPv4)))
+	ipaddrIP = peg.Alt(ipaddrIPv6, ipaddrIPv4)
 
-	// IPv6 address with zone identifer.
-	IPv6WithZone = peg.Seq(IPv6, peg.T("%"), DecInteger)
+	ipaddrCIDRv4 = peg.Seq(ipaddrIPv4, peg.T("/"), DecIntegerBetween(0, 32))
+	ipaddrCIDRv6 = peg.Seq(ipaddrIPv6, peg.T("/"), DecIntegerBetween(0, 128))
+	ipaddrCIDR   = peg.Alt(ipaddrCIDRv6, ipaddrCIDRv4)
+
+	ipaddrIPv6WithZone = peg.Seq(ipaddrIPv6, peg.T("%"), DecInteger)
+
+	// IP addresses.
+	IP   = ipaddrIP
+	IPv4 = ipaddrIPv4
+	IPv6 = ipaddrIPv6
+
+	// IP addresses with subnetwork mask.
+	CIDR   = ipaddrCIDR
+	CIDRv4 = ipaddrCIDRv4
+	CIDRv6 = ipaddrCIDRv6
 
 	// IPv6 address with subnetwork mask.
-	CIDRv6 = peg.Seq(IPv6, peg.T("/"), DecIntegerBetween(0, 128))
-
-	// IPv4 or IPv6 address.
-	IP = peg.Alt(IPv6, IPv4)
-
-	// IP address with subnetwork mask.
-	CIDR = peg.Alt(CIDRv6, CIDRv4)
+	IPv6WithZone = ipaddrIPv6WithZone
 )
 
 // URI definitions described in RFC 3986.
 var (
-	// helpers.
+	// The rune sets described in RFC 3986.
 	uriEncodedByte       = peg.Seq(peg.T("%"), HexDigit, HexDigit)
 	uriSchemeRune        = peg.Alt(ASCIILetterDigit, peg.S("+-."))
 	uriUserInfoRune      = peg.Alt(ASCIILetterDigit, peg.S(":-_.~!$&'()*+,;="), uriEncodedByte)
@@ -84,30 +87,37 @@ var (
 	uriPathNoSchemeRune  = peg.Alt(ASCIILetterDigit, peg.S("@-_.~!$&'()*+,;="), uriEncodedByte)
 	uriQueryFragmentRune = peg.Alt(ASCIILetterDigit, peg.S("?/:@-_.~!$&'()*+,;="), uriEncodedByte)
 
-	// URI host part.
-	//     `ipv4 | regname | "[" (ipv6|"v"version"."data) "]"`.
-	URIHost = peg.Alt(
+	// Basic parts:
+	//   host := ipv4 | regname | '[' ( ipv6 | 'v' version '.' data ) ']' .
+	uriHost = peg.Alt(
 		peg.Seq(peg.TI("[v"), peg.Q1(HexDigit), peg.T("."), peg.Q1(uriIPvFutureRune), peg.T("]")),
-		peg.Seq(peg.T("["), IPv6, peg.T("]")),
-		IPv4,
+		peg.Seq(peg.T("["), ipaddrIPv6, peg.T("]")),
+		ipaddrIPv4,
 		peg.Q1(uriRegNameRune))
 
-	// URI authority and path part:
-	//     `//[userinfo@]host[:port]/path`.
-	uriAuthorityAndPath = peg.Seq(
+	// Basic parts:
+	//   authority := '//' [ userinfo '@' ] host [ ':' port ] .
+	uriAuthority = peg.Seq(
 		peg.T("//"),
-		peg.Seq(
-			peg.Q01(peg.Seq(peg.NG("userinfo", peg.Q1(uriUserInfoRune)), peg.T("@"))),
-			peg.NG("host", URIHost),
-			peg.Q01(peg.Seq(peg.T(":"), peg.NG("port", DecUint16)))),
-		peg.NG("path",
-			peg.Q0(peg.Seq(peg.T("/"), peg.Q0(uriPathRune)))))
+		peg.Q01(peg.Seq(
+			peg.NG("userinfo", peg.Q1(uriUserInfoRune)),
+			peg.T("@"))),
+		peg.NG("host", uriHost),
+		peg.Q01(peg.Seq(
+			peg.T(":"),
+			peg.NG("port", DecUint16))))
 
 	// URI without fragment.
-	URIAbsolute = peg.Seq(
+	uriAbsolute = peg.Seq(
 		peg.NG("scheme", peg.Seq(ASCIILetter, peg.Q0(uriSchemeRune))),
 		peg.Alt(
-			uriAuthorityAndPath,
+			// authority and path.
+			peg.Seq(
+				uriAuthority,
+				peg.NG("path",
+					peg.Q0(peg.Seq(
+						peg.T("/"),
+						peg.Q0(uriPathRune))))),
 			// or use bare path.
 			peg.NG("path", peg.Alt(
 				peg.Seq(
@@ -119,23 +129,29 @@ var (
 		// query part.
 		peg.Q01(peg.Seq(peg.T("?"), peg.NG("query", peg.Q0(uriQueryFragmentRune)))))
 
-	// URI.
-	URI = peg.Seq(
+	// Standard URI.
+	uriStandard = peg.Seq(
 		// uri without fragment.
-		URIAbsolute,
-		// fragment.
+		uriAbsolute,
+		// fragment part.
 		peg.Q01(peg.Seq(peg.T("#"), peg.NG("fragment", peg.Q0(uriQueryFragmentRune)))))
 
-	// URI as reference.
-	URIReference = peg.Alt(
+	// URI as a reference.
+	uriReference = peg.Alt(
 		// has scheme.
-		URI,
+		uriStandard,
 		// no scheme.
 		peg.Seq(
 			peg.Alt(
-				uriAuthorityAndPath,
-				// or use bare path, but avoided conflicting with scheme.
-				// the first segment of relative path do not use ':'.
+				// authority and path.
+				peg.Seq(
+					uriAuthority,
+					peg.NG("path",
+						peg.Q0(peg.Seq(
+							peg.T("/"),
+							peg.Q0(uriPathRune))))),
+				// or use bare path, avoided conflicting with scheme:
+				// rune ':' is forbidden in the first segment of relative path.
 				peg.NG("path", peg.Alt(
 					peg.Seq(
 						peg.T("/"),
@@ -146,29 +162,36 @@ var (
 						peg.Q0(peg.Seq(peg.T("/"), peg.Q0(uriPathRune)))),
 					peg.T("/"),
 					peg.True))),
-			// query
+			// query part.
 			peg.Q01(peg.Seq(peg.T("?"), peg.NG("query", peg.Q0(uriQueryFragmentRune)))),
-			// fragment
+			// fragment part.
 			peg.Q01(peg.Seq(peg.T("#"), peg.NG("fragment", peg.Q0(uriQueryFragmentRune))))))
+
+	URI         = uriStandard
+	AbsoluteURI = uriAbsolute
+	HRef        = uriReference
+	Host        = uriHost
 )
 
-// Useful web things
+// Useful web things.
 var (
 	webLetterHypen = peg.R('a', 'z', 'A', 'Z', '-', '-')
-
-	// URL slug.
-	Slug = peg.Q1(webLetterHypen)
-
-	// DNS domain name.
-	Domain = peg.Trunc(253,
+	webSlug        = peg.Q1(webLetterHypen)
+	webDomain      = peg.Trunc(253,
 		peg.Seq(
 			peg.Jmn(1, 127, peg.Qmn(1, 63, webLetterHypen), peg.Seq(peg.T("."))),
 			peg.Q01(peg.T("."))))
+
+	// URL slug.
+	Slug = webSlug
+
+	// DNS domain name.
+	Domain = webDomain
 )
 
 // EMail address described in RFC 5322.
 //
-// This is a rewrite of the regex taking from http://emailregex.com/ in PEG.
+// This is a rewrite of the simplified regexp taking from http://emailregex.com/.
 var (
 	emailLocalRune   = peg.Alt(ASCIILetterDigit, peg.S("!#$%&'*+/=?^_`{|}~-"))
 	emailLocalQuoted = peg.Seq(
@@ -206,10 +229,10 @@ var (
 							'\x01', '\x09',
 							'\x0b', '\x0c',
 							'\x0e', '\x7f')))),
-			IPv4),
+			ipaddrIPv4),
 		peg.T(`]`))
 
-	EMail = peg.Seq(
+	email = peg.Seq(
 		peg.NG("local", peg.Trunc(64, peg.Alt(
 			emailLocalQuoted,
 			peg.J1(peg.Q1(emailLocalRune), peg.T("."))))),
@@ -219,9 +242,12 @@ var (
 			peg.Seq(
 				peg.J1(peg.Q1(ASCIILetterDigit, peg.T("-")), peg.T(".")),
 				peg.Q01(peg.T(".")))))))
+
+	// E-mail address.
+	EMail = email
 )
 
-// helpers.
+// Helpers for IPv6 address validation.
 
 func ipv6EllipsisIPv4(s string) (n int, ok bool) {
 	split := strings.Split(s, "::")

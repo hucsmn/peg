@@ -91,11 +91,11 @@ var Scope = map[string]peg.Pattern{
 	"CIDRv6":       CIDRv6,
 	"IPv6WithZone": IPv6WithZone,
 
-	"URI":          URI,
-	"URIHost":      URIHost,
-	"URIAbsolute":  URIAbsolute,
-	"URIReference": URIReference,
-	"Slug":         Slug,
-	"Domain":       Domain,
-	"EMail":        EMail,
+	"URI":         URI,
+	"AbsoluteURI": AbsoluteURI,
+	"HRef":        HRef,
+	"Host":        Host,
+	"Slug":        Slug,
+	"Domain":      Domain,
+	"EMail":       EMail,
 }

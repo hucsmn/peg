@@ -8,61 +8,102 @@ import (
 	"github.com/hucsmn/peg"
 )
 
-// Literals
+// Bare integers.
 var (
-	// Bare integers.
-	DecInteger = peg.Q1(DecDigit)
-	DecUint8   = DecIntegerBetween(0, math.MaxUint8)
-	DecUint16  = DecIntegerBetween(0, math.MaxUint16)
-	DecUint32  = DecIntegerBetween(0, math.MaxUint32)
-	DecUint64  = DecIntegerBetween(0, math.MaxUint64)
-	HexInteger = peg.Q1(HexDigit)
-	HexUint8   = HexIntegerBetween(0, math.MaxUint8)
-	HexUint16  = HexIntegerBetween(0, math.MaxUint16)
-	HexUint32  = HexIntegerBetween(0, math.MaxUint32)
-	HexUint64  = HexIntegerBetween(0, math.MaxUint64)
-	OctInteger = peg.Q1(OctDigit)
-	OctUint8   = OctIntegerBetween(0, math.MaxUint8)
-	OctUint16  = OctIntegerBetween(0, math.MaxUint16)
-	OctUint32  = OctIntegerBetween(0, math.MaxUint32)
-	OctUint64  = OctIntegerBetween(0, math.MaxUint64)
+	decInteger = peg.Q1(DecDigit)
+	decUint8   = DecIntegerBetween(0, math.MaxUint8)
+	decUint16  = DecIntegerBetween(0, math.MaxUint16)
+	decUint32  = DecIntegerBetween(0, math.MaxUint32)
+	decUint64  = DecIntegerBetween(0, math.MaxUint64)
+	hexInteger = peg.Q1(HexDigit)
+	hexUint8   = HexIntegerBetween(0, math.MaxUint8)
+	hexUint16  = HexIntegerBetween(0, math.MaxUint16)
+	hexUint32  = HexIntegerBetween(0, math.MaxUint32)
+	hexUint64  = HexIntegerBetween(0, math.MaxUint64)
+	octInteger = peg.Q1(OctDigit)
+	octUint8   = OctIntegerBetween(0, math.MaxUint8)
+	octUint16  = OctIntegerBetween(0, math.MaxUint16)
+	octUint32  = OctIntegerBetween(0, math.MaxUint32)
+	octUint64  = OctIntegerBetween(0, math.MaxUint64)
 
-	// Simplified bare integer.
-	SimpleHexUint8  = peg.Qmn(1, 2, HexDigit)
-	SimpleHexUint16 = peg.Qmn(1, 4, HexDigit)
-	SimpleHexUint32 = peg.Qmn(1, 8, HexDigit)
-	SimpleHexUint64 = peg.Qmn(1, 16, HexDigit)
+	DecInteger = decInteger
+	DecUint8   = decUint8
+	DecUint16  = decUint16
+	DecUint32  = decUint32
+	DecUint64  = decUint64
+	HexInteger = hexInteger
+	HexUint8   = hexUint8
+	HexUint16  = hexUint16
+	HexUint32  = hexUint32
+	HexUint64  = hexUint64
+	OctInteger = octInteger
+	OctUint8   = octUint8
+	OctUint16  = octUint16
+	OctUint32  = octUint32
+	OctUint64  = octUint64
+)
 
-	// Numbers.
-	Integer = peg.Alt(
+// Simplified bare integer.
+var (
+	simpleHexUint8  = peg.Qmn(1, 2, HexDigit)
+	simpleHexUint16 = peg.Qmn(1, 4, HexDigit)
+	simpleHexUint32 = peg.Qmn(1, 8, HexDigit)
+	simpleHexUint64 = peg.Qmn(1, 16, HexDigit)
+
+	SimpleHexUint8  = simpleHexUint8
+	SimpleHexUint16 = simpleHexUint16
+	SimpleHexUint32 = simpleHexUint32
+	SimpleHexUint64 = simpleHexUint64
+)
+
+// Numbers.
+var (
+	literalInteger = peg.Alt(
 		peg.Seq(peg.TI("0x"), HexInteger),
 		DecInteger,
 		peg.Seq(peg.T("0"), OctInteger))
-	Decimal = peg.Check(func(s string) bool { return s != "." },
+	literalDecimal = peg.Check(func(s string) bool { return s != "." },
 		peg.Alt(
 			peg.Seq(peg.Q0(DecDigit), peg.T("."), peg.Q0(DecDigit)),
 			DecInteger))
-	Float = peg.Seq(
-		Decimal,
+	literalFloat = peg.Seq(
+		literalDecimal,
 		peg.Q01(
 			peg.Seq(peg.TI("e"), peg.Q01(peg.S("+-")), DecInteger)))
-	Number = peg.Alt(
+	literalNumber = peg.Alt(
 		peg.Seq(peg.TI("0x"), HexInteger),
-		Float,
+		literalFloat,
 		peg.Seq(peg.T("0"), OctInteger))
 
-	// Identifer.
-	Identifier = peg.Seq(
+	Integer = literalInteger
+	Decimal = literalDecimal
+	Float   = literalFloat
+	Number  = literalNumber
+)
+
+// Identifer.
+var (
+	literalIdentifier = peg.Seq(
 		peg.Alt(Letter, peg.T("_")),
 		peg.Q0(LetterDigit, peg.T("_")))
 
-	// Spaces and newlines.
-	AnySpaces = peg.Q0(Whitespace)
-	Spaces    = peg.Q1(Whitespace)
-	Newline   = peg.Alt(peg.T("\r\n"), peg.S("\r\n"))
+	Identifier = literalIdentifier
+)
 
-	// Quoted string.
-	String = peg.Seq(
+// Spaces and newlines.
+var (
+	lexAnySpaces = peg.Q0(Whitespace)
+	lexSpaces    = peg.Q1(Whitespace)
+	lexNewline   = peg.Alt(peg.T("\r\n"), peg.S("\r\n"))
+
+	AnySpaces = lexAnySpaces
+	Spaces    = lexSpaces
+	Newline   = lexNewline
+)
+
+// Quoted string.
+var (
+	literalString = peg.Seq(
 		peg.T(`"`),
 		peg.Q0(
 			peg.Seq(peg.T(`\U`), peg.Qnn(8, HexDigit)),
@@ -72,6 +113,8 @@ var (
 			peg.Seq(peg.T(`\`), peg.S(`abfnrtv\'"`)),
 			peg.NS("\"\n\r")),
 		peg.T(`"`))
+
+	String = literalString
 )
 
 // IntegerBetween matches an Integer in the range [m, n].
@@ -99,7 +142,7 @@ func OctIntegerBetween(m, n uint64) peg.Pattern {
 	return peg.Inject(newBareIntegerInjector(m, n, 8), OctInteger)
 }
 
-// helpers
+// Helpers for integer literal validation.
 
 func newIntegerInjector(m, n uint64) func(s string) (int, bool) {
 	// assumes: len(s) > 0, matches Integer.
